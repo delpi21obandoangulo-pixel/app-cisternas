@@ -3684,7 +3684,9 @@
     };
   }
   function ofertaARemoto(o){
-    return { id: o.id, solicitud_id: o.solicitudId, empresa_id: o.empresaId, precio: Number(o.precio) || 0, tiempo_entrega_min: Number(o.tiempoEntregaMin) || 0 };
+    // empresa_nombre es NOT NULL en la tabla real (ver verificación end-to-end) — se manda
+    // siempre derivado de buscarEmpresa(), nunca a mano, para que no se pueda desincronizar.
+    return { id: o.id, solicitud_id: o.solicitudId, empresa_id: o.empresaId, empresa_nombre: buscarEmpresa(o.empresaId).nombre, precio: Number(o.precio) || 0, tiempo_entrega_min: Number(o.tiempoEntregaMin) || 0 };
   }
   function ofertaDesdeRemoto(r){
     return { id: r.id, solicitudId: r.solicitud_id, empresaId: r.empresa_id, precio: r.precio, tiempoEntregaMin: r.tiempo_entrega_min };
