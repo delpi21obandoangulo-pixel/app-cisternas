@@ -69,6 +69,11 @@ alter table public.pedidos add column if not exists empresa_id text not null def
 update public.pedidos set empresa_id = 'kunturmasha' where empresa_id is null;
 create index if not exists pedidos_empresa_idx on public.pedidos (empresa_id);
 
+-- Volumen (m³) y método de pago — mismos parámetros técnicos que el formulario público del
+-- Hub Central, ahora también en el registro interno de pedidos ("Despacho") de cada empresa.
+alter table public.pedidos add column if not exists volumen_m3 numeric(6,2);
+alter table public.pedidos add column if not exists metodo_pago text;
+
 -- ---------- Tabla: gastos ----------
 create table if not exists public.gastos (
   id           text primary key,

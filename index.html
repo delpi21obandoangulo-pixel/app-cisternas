@@ -901,13 +901,28 @@
           <div class="chip-group" id="chipsSector"></div>
         </div>
         <div class="form-group">
-          <label>Dirección o referencia exacta (opcional, escrita)</label>
-          <input type="text" id="detalleUbicacion" placeholder="Ej: Mz. A54, Lt. 28 / 3era etapa">
+          <label>Dirección exacta / Referencia escrita</label>
+          <input type="text" id="detalleUbicacion" placeholder="Ej: Mz. A54, Lt. 28 / 3era etapa" required>
         </div>
         <p class="ubicacion-error" id="ubicacionError" hidden>Elige al menos un distrito o zona.</p>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Volumen (m³)</label>
+            <input type="number" id="volumenM3" min="1" step="0.5" placeholder="Ej: 7" required>
+          </div>
+          <div class="form-group">
+            <label>Precio acordado (S/.)</label>
+            <input type="number" id="precio" required placeholder="0.00" step="0.01" min="0">
+          </div>
+        </div>
         <div class="form-group">
-          <label>Precio acordado (S/.)</label>
-          <input type="number" id="precio" required placeholder="0.00" step="0.01" min="0">
+          <label>Método de pago</label>
+          <select id="metodoPago">
+            <option value="Efectivo">Efectivo</option>
+            <option value="Yape / Plin">Yape / Plin</option>
+            <option value="Transferencia">Transferencia</option>
+            <option value="Tarjeta">Tarjeta</option>
+          </select>
         </div>
 
         <div class="form-row">
@@ -940,8 +955,13 @@
             </select>
           </div>
           <div class="form-group" id="groupPiso">
-            <label>Piso de descarga</label>
-            <input type="number" id="piso" min="1" max="10" value="1">
+            <label>Piso / nivel de altura</label>
+            <select id="piso">
+              <option value="1er piso">1er piso</option>
+              <option value="2do piso">2do piso</option>
+              <option value="3er piso">3er piso</option>
+              <option value="4to piso o más">4to piso o más</option>
+            </select>
           </div>
         </div>
 
@@ -955,11 +975,12 @@
             </select>
           </div>
           <div class="form-group">
-            <label>Manguera requerida</label>
+            <label>Metros de manguera necesarios</label>
             <select id="manguera">
-              <option value="Estándar (15m)">Estándar (15m)</option>
-              <option value="Extendida (30m)">Extendida (30m)</option>
-              <option value="Larga (50m+)">Larga (50m+)</option>
+              <option value="10m">10 m</option>
+              <option value="20m">20 m</option>
+              <option value="30m">30 m</option>
+              <option value="50m+">50 m o más</option>
             </select>
           </div>
         </div>
@@ -1645,6 +1666,8 @@
       if(p.afiliadorEmail === undefined) p.afiliadorEmail = '';
       if(p.telefono === undefined) p.telefono = '';
       if(p.empresaId === undefined) p.empresaId = 'kunturmasha';
+      if(p.volumenM3 === undefined) p.volumenM3 = 0;
+      if(p.metodoPago === undefined) p.metodoPago = '';
       if(!Array.isArray(p.tiempos) || p.tiempos.length !== ETAPAS.length) p.tiempos = tiemposVacios();
       // Blindaje del ciclo de vida: cualquier pedido con estado ausente, vacío o que
       // no exista en FLUJO_ESTADOS/ESTADOS_FALLIDOS (dato corrupto, import manual de
@@ -1845,7 +1868,9 @@
     'Laredo': ['Laredo Centro', 'Cortijo'],
     'Poroto': [],
     'Simbal': [],
-    'Alto Trujillo': ['Sector I', 'Sector II', 'Sector III']
+    'Alto Trujillo': ['Sector I', 'Sector II', 'Sector III'],
+    'El Milagro': [],
+    'Luz del Sol': []
   };
   var DISTRITOS = Object.keys(ZONAS_POR_DISTRITO);
   var TODAS_LAS_ZONAS = Object.keys(ZONAS_POR_DISTRITO).reduce(function(acc, d){
@@ -2244,8 +2269,10 @@
         (p.telefono ? '<div class="order-ubicacion">📞 ' + escapeHtml(p.telefono) + '</div>' : '') +
         '<div class="order-meta">' +
           '<span class="meta-tag">' + p.tipoAlmacen + (p.piso !== '-' ? ' · ' + p.piso : '') + '</span>' +
+          (p.volumenM3 ? '<span class="meta-tag">💧 ' + p.volumenM3 + ' m³</span>' : '') +
           '<span class="meta-tag">Dificultad: ' + p.dificultad + '</span>' +
           '<span class="meta-tag">Manguera: ' + p.manguera + '</span>' +
+          (p.metodoPago ? '<span class="meta-tag">' + escapeHtml(p.metodoPago) + '</span>' : '') +
           (p.chofer ? '<span class="meta-tag">🧑‍✈️ ' + escapeHtml(p.chofer) + '</span>' : '') +
           (p.ayudante ? '<span class="meta-tag">🧑‍🔧 ' + escapeHtml(p.ayudante) + '</span>' : '') +
           (prioridad ? '<span class="meta-tag badge-prioridad ' + prioridad.cls + '">' + prioridad.texto + '</span>' : '') +
@@ -2427,8 +2454,10 @@
     els.chofer.value = p.chofer || '';
     els.ayudante.value = p.ayudante || '';
     els.conseguidoPor.value = resolverPersonaId(p.afiliadorEmail);
+    document.getElementById('volumenM3').value = p.volumenM3 || '';
+    document.getElementById('metodoPago').value = p.metodoPago || 'Efectivo';
     els.tipoAlmacen.value = p.tipoAlmacen;
-    document.getElementById('piso').value = (p.piso !== '-' ? parseInt(p.piso, 10) || 1 : 1);
+    document.getElementById('piso').value = (p.piso && p.piso !== '-') ? p.piso : '1er piso';
     document.getElementById('dificultad').value = p.dificultad;
     document.getElementById('manguera').value = p.manguera;
     document.getElementById('notas').value = p.notas || '';
@@ -2488,6 +2517,8 @@
       horaInicio: document.getElementById('horaInicio').value,
       horaFin: document.getElementById('horaFin').value,
       precio: parseFloat(els.precio.value),
+      volumenM3: parseFloat(document.getElementById('volumenM3').value) || 0,
+      metodoPago: document.getElementById('metodoPago').value,
       chofer: els.chofer.value.trim(),
       ayudante: els.ayudante.value.trim(),
       // "Conseguido por" manda si alguien lo eligió a mano; si se deja en blanco y quien
@@ -2496,7 +2527,7 @@
       afiliadorEmail: els.conseguidoPor.value || ((rolActivo === 'afiliador' && usuarioActual) ? (personaDeCredencial(buscarCredencial(usuarioActual.email)) || {}).id || '' : ''),
       empresaId: empresaActivaId,
       tipoAlmacen: tipo,
-      piso: tipo === 'Tanque Elevado' ? document.getElementById('piso').value + '° Piso' : '-',
+      piso: tipo === 'Tanque Elevado' ? document.getElementById('piso').value : '-',
       dificultad: document.getElementById('dificultad').value,
       manguera: document.getElementById('manguera').value,
       notas: document.getElementById('notas').value
@@ -3431,7 +3462,8 @@
       notas: p.notas || '', estado: p.estado || '', motivo_cancelacion: p.motivoCancelacion || '',
       tiempos: Array.isArray(p.tiempos) ? p.tiempos : tiemposVacios(),
       afiliador_email: p.afiliadorEmail || '', telefono: p.telefono || '',
-      empresa_id: p.empresaId || 'kunturmasha'
+      empresa_id: p.empresaId || 'kunturmasha',
+      volumen_m3: p.volumenM3 || null, metodo_pago: p.metodoPago || ''
     };
   }
   function pedidoDesdeRemoto(r){
@@ -3441,7 +3473,8 @@
       chofer: r.chofer, ayudante: r.ayudante, tipoAlmacen: r.tipo_almacen, piso: r.piso,
       dificultad: r.dificultad, manguera: r.manguera, notas: r.notas, estado: r.estado,
       motivoCancelacion: r.motivo_cancelacion, tiempos: r.tiempos, afiliadorEmail: r.afiliador_email || '',
-      telefono: r.telefono || '', empresaId: r.empresa_id || 'kunturmasha'
+      telefono: r.telefono || '', empresaId: r.empresa_id || 'kunturmasha',
+      volumenM3: r.volumen_m3 || 0, metodoPago: r.metodo_pago || ''
     };
   }
   function gastoARemoto(g){
@@ -3887,7 +3920,7 @@
             '<button type="button" class="btn-ghost" id="btnUbicacionActualHub" style="width:100%; margin-bottom:4px;">📍 Usar mi ubicación actual</button>' +
             '<input type="hidden" id="hubLat"><input type="hidden" id="hubLng">' +
           '</div>' +
-          '<div class="form-group"><label>Dirección o referencia exacta</label><input type="text" id="hubDireccion" placeholder="Se autocompleta al marcar el mapa, o escríbela tú"></div>' +
+          '<div class="form-group"><label>Dirección exacta / Referencia escrita</label><input type="text" id="hubDireccion" placeholder="Se autocompleta al marcar el mapa, o escríbela tú" required></div>' +
           '<button type="submit" class="btn" style="width:100%;">Publicar solicitud</button>' +
           '<p class="modal-status" id="hubClienteStatus"></p>' +
         '</form>' +
