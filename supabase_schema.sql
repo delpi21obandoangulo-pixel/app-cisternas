@@ -175,6 +175,19 @@ create table if not exists public.solicitudes_centrales (
 comment on table public.solicitudes_centrales is 'Hub Central: solicitudes de agua publicadas por clientes, a subasta entre empresas asociadas.';
 create index if not exists solicitudes_estado_idx on public.solicitudes_centrales (estado);
 
+-- Mapa interactivo (Leaflet) del formulario de publicar solicitud: coordenadas exactas del
+-- pin, más los dos parámetros técnicos nuevos del formulario (metros de manguera y piso —
+-- este último solo aplica si tipo_descarga = 'Tanque Elevado', queda vacío en los demás casos).
+alter table public.solicitudes_centrales add column if not exists lat numeric(9,6);
+alter table public.solicitudes_centrales add column if not exists lng numeric(9,6);
+alter table public.solicitudes_centrales add column if not exists manguera_metros text;
+alter table public.solicitudes_centrales add column if not exists piso text;
+
+-- Nombre de la empresa en el momento de ofertar (denormalizado a propósito): así la pizarra
+-- de subasta no depende de resolver empresa_id -> nombre en el navegador de quien mira.
+alter table public.ofertas_subasta add column if not exists empresa_nombre text;
+update public.ofertas_subasta set empresa_nombre = empresa_id where empresa_nombre is null;
+
 -- Una oferta de una empresa sobre una solicitud — varias empresas pueden ofertar sobre la
 -- misma solicitud; "upsert" por (solicitud_id, empresa_id) para que actualizar tu oferta
 -- reemplace la anterior en vez de acumular filas.

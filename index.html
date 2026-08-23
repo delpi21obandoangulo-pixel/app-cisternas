@@ -8,6 +8,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<!-- Leaflet (mapa del Hub Central, ver iniciarMapaHub()) — si el CDN no carga, el campo de
+     dirección del formulario sigue funcionando a mano, no bloquea nada. -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
   :root{
     color-scheme: dark;
@@ -3660,6 +3664,16 @@
   var misSolicitudesIds = cargarMisSolicitudes();
   function guardarMisSolicitudes(){ try{ localStorage.setItem(MIS_SOLICITUDES_KEY, JSON.stringify(misSolicitudesIds)); }catch(e){} }
 
+  // "Contacto habitual" — nombre y teléfono se recuerdan en este navegador para no tener
+  // que retiparlos cada vez que se publica una solicitud nueva.
+  var HUB_CONTACTO_KEY = 'kunturmasha_hub_contacto_v1';
+  function cargarContactoHabitual(){
+    try{ return JSON.parse(localStorage.getItem(HUB_CONTACTO_KEY) || 'null') || null; }catch(e){ return null; }
+  }
+  function guardarContactoHabitual(cliente, telefono){
+    try{ localStorage.setItem(HUB_CONTACTO_KEY, JSON.stringify({ cliente: cliente, telefono: telefono })); }catch(e){}
+  }
+
   var solicitudesCentrales = [];
   var ofertasSubasta = [];
   var hubDebounce = null;
@@ -3672,7 +3686,9 @@
       ubicacion: s.ubicacion || '', tipo_descarga: s.tipoDescarga || '', hora_fin: s.horaFin, estado: s.estado || 'Abierta',
       empresa_ganadora_id: s.empresaGanadoraId || null, oferta_ganadora_precio: s.ofertaGanadoraPrecio || null,
       oferta_ganadora_tiempo: s.ofertaGanadoraTiempo || null, comision_sede_central: s.comisionSedeCentral || null,
-      pedido_generado_id: s.pedidoGeneradoId || null
+      pedido_generado_id: s.pedidoGeneradoId || null,
+      lat: (s.lat || s.lat === 0) ? s.lat : null, lng: (s.lng || s.lng === 0) ? s.lng : null,
+      manguera_metros: s.mangueraMetros || null, piso: s.piso || null
     };
   }
   function solicitudDesdeRemoto(r){
@@ -3680,7 +3696,8 @@
       id: r.id, cliente: r.cliente, telefono: r.telefono, volumenM3: r.volumen_m3, ubicacion: r.ubicacion,
       tipoDescarga: r.tipo_descarga, horaFin: r.hora_fin, estado: r.estado, empresaGanadoraId: r.empresa_ganadora_id,
       ofertaGanadoraPrecio: r.oferta_ganadora_precio, ofertaGanadoraTiempo: r.oferta_ganadora_tiempo,
-      comisionSedeCentral: r.comision_sede_central, pedidoGeneradoId: r.pedido_generado_id
+      comisionSedeCentral: r.comision_sede_central, pedidoGeneradoId: r.pedido_generado_id,
+      lat: r.lat, lng: r.lng, mangueraMetros: r.manguera_metros, piso: r.piso
     };
   }
   function ofertaARemoto(o){
@@ -3734,9 +3751,15 @@
   // 'Abierta')) para que dos navegadores resolviendo al mismo tiempo no dupliquen el pedido,
   // retiene la comisión de peaje de Sede Central, y transfiere el viaje a la agenda interna
   // de la empresa ganadora (nuevo pedido con su empresaId, teléfono ya desbloqueado).
-  async function adjudicarSolicitud(solicitud){
+  // "ofertaElegida" es opcional: si el cliente presiona "Aceptar Oferta Ahora" en una
+  // oferta puntual, se adjudica esa — sin esperar a que se cumplan los 30 min ni a que sea
+  // la más barata. Si se omite (cierre automático por el temporizador), se calcula la
+  // mejor con mejorOferta() como antes. La guardia .eq('estado','Abierta') decide cuál de
+  // las dos vías gana si compiten (la que le gane la carrera a Supabase, ver comentario
+  // más abajo) — nunca se duplica el pedido.
+  async function adjudicarSolicitud(solicitud, ofertaElegida){
     if(!supa) return;
-    var ganadora = mejorOferta(solicitud.id);
+    var ganadora = ofertaElegida || mejorOferta(solicitud.id);
     if(!ganadora){
       await supa.from('solicitudes_centrales').update({ estado: 'Cerrada sin ofertas' }).eq('id', solicitud.id).eq('estado', 'Abierta');
       refrescarHub();
@@ -3760,7 +3783,7 @@
       cliente: solicitud.cliente || ('Cliente Hub ' + solicitud.id), codigoCliente: obtenerCodigoParaCliente(solicitud.cliente || solicitud.id),
       telefono: solicitud.telefono || '', ubicacion: solicitud.ubicacion || '',
       horaInicio: horaInicio, horaFin: sumarMinutosHora(horaInicio, 120), precio: ganadora.precio,
-      chofer: '', ayudante: '', tipoAlmacen: solicitud.tipoDescarga || '', piso: '-', dificultad: '', manguera: '',
+      chofer: '', ayudante: '', tipoAlmacen: solicitud.tipoDescarga || '', piso: solicitud.piso || '-', dificultad: '', manguera: solicitud.mangueraMetros || '',
       notas: 'Adjudicado por el Hub Central (subasta ' + solicitud.id + ', ' + solicitud.volumenM3 + ' m³) — tiempo de entrega ofertado: ' + ganadora.tiempoEntregaMin + ' min.',
       estado: 'Programado', motivoCancelacion: '', tiempos: tiemposVacios(), afiliadorEmail: '', empresaId: empresaGanadora.id
     };
@@ -3813,6 +3836,22 @@
     return '<div class="tabla-wrap"><table class="tabla-registro"><thead><tr><th>Empresa</th><th class="num">Precio</th><th class="num">Entrega</th></tr></thead><tbody>' + filas + '</tbody></table></div>';
   }
 
+  // Igual que tablaOfertas(), pero para el cliente — cada fila trae su botón "Aceptar Oferta
+  // Ahora": no hace falta esperar los 30 min, el cliente puede cerrar la subasta al toque
+  // con la empresa que prefiera (ver adjudicarSolicitud(solicitud, ofertaElegida)).
+  function tablaOfertasCliente(solicitudId){
+    var ofertas = ofertasSubasta.filter(function(o){ return o.solicitudId === solicitudId; })
+      .slice().sort(function(a, b){ return a.precio - b.precio || a.tiempoEntregaMin - b.tiempoEntregaMin; });
+    if(!ofertas.length) return '<p class="campo-nota" style="margin:6px 0 0;">Todavía sin ofertas — las empresas asociadas están viendo tu solicitud.</p>';
+    var filas = ofertas.map(function(o, i){
+      return '<tr' + (i === 0 ? ' style="color:var(--good); font-weight:700;"' : '') + '>' +
+        '<td>' + escapeHtml(buscarEmpresa(o.empresaId).nombre) + '</td><td class="num">' + formatMoneda(o.precio) + '</td><td class="num">' + o.tiempoEntregaMin + ' min</td>' +
+        '<td><button type="button" class="btn btn-aceptar-oferta" data-solicitud="' + solicitudId + '" data-oferta="' + o.id + '" style="padding:6px 12px; font-size:0.72rem;">✅ Aceptar Oferta Ahora</button></td>' +
+      '</tr>';
+    }).join('');
+    return '<div class="tabla-wrap"><table class="tabla-registro"><thead><tr><th>Empresa</th><th class="num">Precio</th><th class="num">Entrega</th><th></th></tr></thead><tbody>' + filas + '</tbody></table></div>';
+  }
+
   /* ---- Cascarón fijo vs. lista dinámica ----
      El bug de foco venía de repintar TODO #hubContenido (formulario incluido) en cada
      refresco disparado por Realtime/temporizador. Ahora el formulario de publicar (cliente)
@@ -3823,17 +3862,29 @@
      (necesitan verse actualizadas en vivo); ahí se usa document.activeElement como guardia
      extra: si la persona está escribiendo justo ahí, ese repintado puntual se salta. */
   function shellHubCliente(){
+    var contacto = cargarContactoHabitual();
     return '<div class="panel form-panel">' +
         '<h2>Publica tu solicitud de agua</h2>' +
         '<p class="campo-nota">Las empresas asociadas verán tu pedido y ofertarán precio y tiempo de entrega durante ' + VENTANA_SUBASTA_MIN + ' minutos — tu teléfono solo se comparte con la empresa que gane.</p>' +
         '<form id="hubClienteForm">' +
-          '<div class="form-group"><label>Cliente / contacto</label><input type="text" id="hubCliente" required></div>' +
-          '<div class="form-group"><label>Teléfono / WhatsApp de contacto</label><input type="tel" id="hubTelefono" required></div>' +
+          '<div class="form-group"><label>Cliente / contacto</label><input type="text" id="hubCliente" value="' + escapeHtml(contacto ? contacto.cliente : '') + '" required></div>' +
+          '<div class="form-group"><label>Teléfono / WhatsApp de contacto</label><input type="tel" id="hubTelefono" value="' + escapeHtml(contacto ? contacto.telefono : '') + '" required></div>' +
           '<div class="form-row">' +
             '<div class="form-group"><label>Volumen (m³)</label><input type="number" id="hubVolumen" min="1" step="0.5" value="7" required></div>' +
             '<div class="form-group"><label>Tipo de descarga</label><select id="hubTipoDescarga"><option value="Tanque Elevado">Tanque Elevado</option><option value="Cisterna Subterránea / Pozo">Cisterna Subt. / Pozo</option><option value="Bidones / Cilindros">Bidones / Cilindros</option></select></div>' +
           '</div>' +
-          '<div class="form-group"><label>Ubicación / destino</label><select id="hubUbicacion">' + DISTRITOS.map(function(d){ return '<option value="' + escapeHtml(d) + '">' + d + '</option>'; }).join('') + '</select></div>' +
+          '<div class="form-row">' +
+            '<div class="form-group"><label>Metros de manguera necesarios</label><select id="hubManguera"><option value="10m">10 m</option><option value="20m">20 m</option><option value="30m">30 m</option><option value="50m+">50 m o más</option></select></div>' +
+            '<div class="form-group" id="hubGroupPiso" hidden><label>Piso / nivel de altura</label><select id="hubPiso"><option value="1er piso">1er piso</option><option value="2do piso">2do piso</option><option value="3er piso">3er piso</option><option value="4to piso o más">4to piso o más</option></select></div>' +
+          '</div>' +
+          '<div class="form-group"><label>Distrito</label><select id="hubUbicacion">' + DISTRITOS.map(function(d){ return '<option value="' + escapeHtml(d) + '">' + d + '</option>'; }).join('') + '</select></div>' +
+          '<div class="form-group">' +
+            '<label>Ubicación exacta — marca el punto en el mapa o arrastra el pin</label>' +
+            '<div id="hubMapa" style="height:240px; border-radius:12px; overflow:hidden; margin-bottom:8px; border:1px solid var(--border);"></div>' +
+            '<button type="button" class="btn-ghost" id="btnUbicacionActualHub" style="width:100%; margin-bottom:4px;">📍 Usar mi ubicación actual</button>' +
+            '<input type="hidden" id="hubLat"><input type="hidden" id="hubLng">' +
+          '</div>' +
+          '<div class="form-group"><label>Dirección o referencia exacta</label><input type="text" id="hubDireccion" placeholder="Se autocompleta al marcar el mapa, o escríbela tú"></div>' +
           '<button type="submit" class="btn" style="width:100%;">Publicar solicitud</button>' +
           '<p class="modal-status" id="hubClienteStatus"></p>' +
         '</form>' +
@@ -3847,19 +3898,38 @@
       '</div>' +
       '<div id="hubListaWrap"></div>';
   }
-  // Único listener del <form> de publicar — se conecta solo cuando el cascarón de cliente
-  // se vuelve a montar (cambio de rol), nunca en cada refresco de la lista.
+  // Único listener del <form> de publicar (+ mapa, geolocalización y el toggle de piso) —
+  // se conecta solo cuando el cascarón de cliente se vuelve a montar (cambio de rol), nunca
+  // en cada refresco de la lista — por eso el mapa no se reinicia mientras la persona escribe.
   function activarFormularioHubCliente(){
+    document.getElementById('hubTipoDescarga').addEventListener('change', hubTogglePiso);
+    hubTogglePiso();
+    iniciarMapaHub();
+    document.getElementById('btnUbicacionActualHub').addEventListener('click', function(){
+      if(!navigator.geolocation){ alert('Tu navegador no soporta geolocalización.'); return; }
+      navigator.geolocation.getCurrentPosition(function(pos){
+        colocarMarcadorHub(pos.coords.latitude, pos.coords.longitude);
+      }, function(){ alert('No se pudo obtener tu ubicación — revisa los permisos del navegador.'); });
+    });
+
     document.getElementById('hubClienteForm').addEventListener('submit', async function(e){
       e.preventDefault();
       if(!supa){ document.getElementById('hubClienteStatus').textContent = 'Sin conexión — intenta más tarde.'; return; }
+      var cliente = document.getElementById('hubCliente').value.trim();
+      var telefono = document.getElementById('hubTelefono').value.trim();
+      var distrito = document.getElementById('hubUbicacion').value;
+      var direccion = document.getElementById('hubDireccion').value.trim();
+      var lat = document.getElementById('hubLat').value;
+      var lng = document.getElementById('hubLng').value;
       var nueva = {
         id: 'SOL-' + Date.now().toString(36).toUpperCase(),
-        cliente: document.getElementById('hubCliente').value.trim(),
-        telefono: document.getElementById('hubTelefono').value.trim(),
+        cliente: cliente, telefono: telefono,
         volumenM3: parseFloat(document.getElementById('hubVolumen').value) || 0,
-        ubicacion: document.getElementById('hubUbicacion').value,
+        ubicacion: direccion ? (direccion + ' — ' + distrito) : distrito,
         tipoDescarga: document.getElementById('hubTipoDescarga').value,
+        mangueraMetros: document.getElementById('hubManguera').value,
+        piso: document.getElementById('hubTipoDescarga').value === 'Tanque Elevado' ? document.getElementById('hubPiso').value : '',
+        lat: lat ? parseFloat(lat) : null, lng: lng ? parseFloat(lng) : null,
         horaFin: new Date(Date.now() + VENTANA_SUBASTA_MIN * 60000).toISOString(),
         estado: 'Abierta'
       };
@@ -3868,10 +3938,67 @@
       if(res.error){ status.textContent = 'No se pudo publicar: ' + res.error.message; status.className = 'modal-status err'; return; }
       misSolicitudesIds.push(nueva.id);
       guardarMisSolicitudes();
+      guardarContactoHabitual(cliente, telefono); // para autocompletar la próxima vez
       status.textContent = '¡Publicado! Las empresas ya pueden ofertar.';
       status.className = 'modal-status ok';
       refrescarHub();
     });
+  }
+  function hubTogglePiso(){
+    document.getElementById('hubGroupPiso').hidden = document.getElementById('hubTipoDescarga').value !== 'Tanque Elevado';
+  }
+
+  /* ---- Mapa interactivo (Leaflet + OpenStreetMap), estilo InDrive ----
+     Se inicializa una sola vez por montaje del cascarón de cliente (ver
+     activarFormularioHubCliente) — nunca en un refresco de la lista, así que no se reinicia
+     mientras la persona interactúa con el formulario. Si el CDN de Leaflet no cargó (sin
+     internet, bloqueado), queda en null y el campo de dirección sigue funcionando a mano:
+     no bloquea publicar la solicitud. */
+  var TRUJILLO_CENTRO = [-8.1116, -79.0287];
+  var hubMapaLeaflet = null, hubMarcadorLeaflet = null;
+  function iniciarMapaHub(){
+    hubMapaLeaflet = null; hubMarcadorLeaflet = null;
+    if(typeof window.L === 'undefined' || !document.getElementById('hubMapa')) return;
+    try{
+      hubMapaLeaflet = L.map('hubMapa').setView(TRUJILLO_CENTRO, 13);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>',
+        maxZoom: 19
+      }).addTo(hubMapaLeaflet);
+      hubMapaLeaflet.on('click', function(e){ colocarMarcadorHub(e.latlng.lat, e.latlng.lng); });
+      // El contenedor pudo medir 0×0 si el navegador todavía no había pintado la pestaña —
+      // fuerza a Leaflet a recalcular tamaño una vez que sí la tiene.
+      setTimeout(function(){ if(hubMapaLeaflet) hubMapaLeaflet.invalidateSize(); }, 200);
+    }catch(e){ console.warn('Hub Central: no se pudo iniciar el mapa', e); hubMapaLeaflet = null; }
+  }
+  function colocarMarcadorHub(lat, lng){
+    if(!hubMapaLeaflet) return;
+    if(hubMarcadorLeaflet) hubMapaLeaflet.removeLayer(hubMarcadorLeaflet);
+    hubMarcadorLeaflet = L.marker([lat, lng], { draggable: true }).addTo(hubMapaLeaflet);
+    hubMarcadorLeaflet.on('dragend', function(){
+      var pos = hubMarcadorLeaflet.getLatLng();
+      actualizarCoordenadasHub(pos.lat, pos.lng);
+    });
+    hubMapaLeaflet.setView([lat, lng], 16);
+    actualizarCoordenadasHub(lat, lng);
+  }
+  function actualizarCoordenadasHub(lat, lng){
+    var elLat = document.getElementById('hubLat'), elLng = document.getElementById('hubLng');
+    if(elLat) elLat.value = lat.toFixed(6);
+    if(elLng) elLng.value = lng.toFixed(6);
+    geocodificarInversoHub(lat, lng);
+  }
+  // Autocompleta el campo de dirección a partir del pin (Nominatim, el geocodificador
+  // gratuito de OpenStreetMap) — el campo sigue siendo editable a mano en cualquier momento,
+  // y si esto falla (sin internet, límite de la API) simplemente no autocompleta nada.
+  function geocodificarInversoHub(lat, lng){
+    fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng)
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        var campo = document.getElementById('hubDireccion');
+        if(campo && data && data.display_name) campo.value = data.display_name;
+      })
+      .catch(function(){ /* sin geocodificación inversa: el campo queda para llenar a mano */ });
   }
 
   function listaHubCliente(){
@@ -3879,8 +4006,11 @@
     if(!propias.length) return '';
     var filasPropias = propias.map(function(s){
       var estadoHtml;
-      if(s.estado === 'Abierta') estadoHtml = '⏳ En subasta — cierra en <span class="cuenta-regresiva mono" data-fin="' + s.horaFin + '">' + formatCuentaRegresiva(new Date(s.horaFin).getTime() - Date.now()) + '</span>';
-      else if(s.estado === 'Adjudicada') estadoHtml = '✅ Adjudicado a <strong>' + escapeHtml(buscarEmpresa(s.empresaGanadoraId).nombre) + '</strong> — ' + formatMoneda(s.ofertaGanadoraPrecio) + ', entrega en ' + s.ofertaGanadoraTiempo + ' min';
+      // Mientras está Abierta, el cliente ve cada oferta con su botón "Aceptar Oferta
+      // Ahora" — no hace falta esperar los 30 min (estilo InDrive); el temporizador solo
+      // queda como límite máximo si nadie elige antes.
+      if(s.estado === 'Abierta') estadoHtml = '⏳ En subasta — cierra en <span class="cuenta-regresiva mono" data-fin="' + s.horaFin + '">' + formatCuentaRegresiva(new Date(s.horaFin).getTime() - Date.now()) + '</span>' + tablaOfertasCliente(s.id);
+      else if(s.estado === 'Adjudicada') estadoHtml = '✅ Adjudicado a <strong>' + escapeHtml(buscarEmpresa(s.empresaGanadoraId).nombre) + '</strong> — ' + formatMoneda(s.ofertaGanadoraPrecio) + ', entrega en ' + s.ofertaGanadoraTiempo + ' min. Te contactan al ' + escapeHtml(s.telefono || '');
       else estadoHtml = '✖️ Cerrada sin ofertas — intenta de nuevo o escríbenos por WhatsApp';
       return '<div class="panel" style="margin-bottom:12px;"><div class="order-client">' + escapeHtml(s.ubicacion) + ' · ' + s.volumenM3 + ' m³ · ' + escapeHtml(s.tipoDescarga) + '</div><p class="campo-nota" style="margin:6px 0 0;">' + estadoHtml + '</p></div>';
     }).join('');
@@ -3903,7 +4033,7 @@
           tablaOfertas(s.id) +
           '<form class="oferta-form" data-solicitud="' + s.id + '" style="display:flex; gap:8px; flex-wrap:wrap; align-items:end; margin-top:10px;">' +
             '<div class="form-group" style="margin:0; flex:1 1 120px;"><label>Tu precio (S/.)</label><input type="number" class="oferta-precio" min="1" step="0.01" value="' + (miOferta ? miOferta.precio : '') + '" required></div>' +
-            '<div class="form-group" style="margin:0; flex:1 1 120px;"><label>Entrega (min)</label><input type="number" class="oferta-tiempo" min="1" value="' + (miOferta ? miOferta.tiempoEntregaMin : '') + '" required></div>' +
+            '<div class="form-group" style="margin:0; flex:1 1 220px;"><label>Tiempo estimado de llegada hasta la ubicación del cliente (minutos)</label><input type="number" class="oferta-tiempo" min="1" value="' + (miOferta ? miOferta.tiempoEntregaMin : '') + '" required></div>' +
             '<button type="submit" class="btn" style="padding:9px 16px;">' + (miOferta ? 'Actualizar oferta' : 'Ofertar') + '</button>' +
           '</form>' +
           botonAdjudicar +
@@ -3949,6 +4079,19 @@
       btn.addEventListener('click', function(){
         var s = solicitudesCentrales.find(function(x){ return x.id === btn.dataset.id; });
         if(s && confirm('¿Cerrar la subasta ahora mismo con las ofertas actuales?')) adjudicarSolicitud(s);
+      });
+    });
+
+    // "Aceptar Oferta Ahora" (cliente) — adjudica esa oferta puntual al instante, sin
+    // esperar los 30 min ni que sea la más barata (ver adjudicarSolicitud(solicitud, oferta)).
+    document.querySelectorAll('.btn-aceptar-oferta').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var s = solicitudesCentrales.find(function(x){ return x.id === btn.dataset.solicitud; });
+        var o = ofertasSubasta.find(function(x){ return x.id === btn.dataset.oferta; });
+        if(!s || !o) return;
+        if(confirm('¿Aceptar la oferta de ' + buscarEmpresa(o.empresaId).nombre + ' por ' + formatMoneda(o.precio) + '? Le compartimos tu contacto de inmediato para coordinar la entrega.')){
+          adjudicarSolicitud(s, o);
+        }
       });
     });
   }
@@ -3998,6 +4141,9 @@
     }
     renderHubLista();
     iniciarTimerHub();
+    // Si el mapa ya existía (el cascarón no se reconstruyó) y la pestaña estuvo oculta,
+    // Leaflet puede haber medido el contenedor en 0×0 — recalcula tamaño por si acaso.
+    if(hubMapaLeaflet) hubMapaLeaflet.invalidateSize();
     if(!solicitudesCentrales.length && !ofertasSubasta.length) refrescarHub(); // primera carga
   }
 
