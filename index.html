@@ -311,6 +311,8 @@
   }
   .btn-logout:hover{border-color:var(--bad); color:var(--bad);}
   @media (max-width:860px){ .session-chip{flex:1 1 100%; justify-content:space-between;} }
+  .empresa-switch{display:flex; align-items:center; gap:7px; padding:5px 12px; background:var(--surface); border:1px solid var(--border); border-radius:100px; backdrop-filter:var(--blur); -webkit-backdrop-filter:var(--blur);}
+  .empresa-switch select{padding:4px 8px; font-size:0.78rem; font-weight:600; border-radius:100px; border:1px solid var(--border-strong); background-color:#1e293b; color:#f8fafc;}
 
   /* ---------- Modal de acceso del personal (correo + contraseña, sin Supabase Auth) ---------- */
   .auth-modal{max-width:400px; text-align:center; position:relative;}
@@ -638,6 +640,10 @@
       <p class="sub">Gestión y Despacho Hídrico · Sede Central, Trujillo, La Libertad · Flota Cisterna 12 m³</p>
     </div>
     <div class="topbar-actions">
+      <div class="empresa-switch" id="empresaSwitch" hidden>
+        <label for="empresaSelector" style="font-size:0.72rem; color:var(--muted);">🏢</label>
+        <select id="empresaSelector"></select>
+      </div>
       <div class="session-chip" id="sessionChip" hidden>
         <span class="session-email" id="sessionEmail"></span>
         <span class="rol-pill" id="sessionRolPill"></span>
@@ -655,6 +661,7 @@
     <button class="view-tab active" data-view="home">🏠 Inicio</button>
     <button class="view-tab" data-view="agenda">📋 Ver agenda</button>
     <button class="view-tab" data-view="cotizar">💧 Cotizar</button>
+    <button class="view-tab" data-view="hub">🌐 Hub Central</button>
     <button class="view-tab" data-view="agendar">🚚 Despacho</button>
     <button class="view-tab" data-view="contabilidad">📊 Contabilidad</button>
     <button class="view-tab" data-view="perfil">💼 Mi Perfil</button>
@@ -673,6 +680,12 @@
         <span class="home-icon">💧</span>
         <h2>Cotizar</h2>
         <p>Escríbenos por WhatsApp o llámanos — atención rápida las 24 horas para cotizar tu despacho de agua.</p>
+        <span class="home-cta">Entrar →</span>
+      </button>
+      <button class="home-card" data-goto="hub">
+        <span class="home-icon">🌐</span>
+        <h2>Hub Central</h2>
+        <p>Publica una solicitud de agua y recibe ofertas de empresas asociadas — o, si administras una empresa, entra a la sala de subasta.</p>
         <span class="home-cta">Entrar →</span>
       </button>
       <button class="home-card" data-goto="agendar">
@@ -820,6 +833,12 @@
         </div>
         <p class="mono" style="font-size:1.15rem; font-weight:700; margin:18px 0 0;">+51 958 132 361</p>
       </div>
+    </main>
+  </section>
+
+  <section id="vistaHub" hidden>
+    <main class="layout-solo">
+      <div id="hubContenido"></div>
     </main>
   </section>
 
@@ -1424,8 +1443,8 @@
   }
 
   var VISTAS_POR_ROL = {
-    admin: { tabs: ['home', 'agenda', 'cotizar', 'agendar', 'contabilidad', 'perfil', 'ajustes'], defaultView: 'home' },
-    cliente: { tabs: ['home', 'agenda', 'cotizar'], defaultView: 'agenda' },
+    admin: { tabs: ['home', 'agenda', 'cotizar', 'hub', 'agendar', 'contabilidad', 'perfil', 'ajustes'], defaultView: 'home' },
+    cliente: { tabs: ['home', 'agenda', 'cotizar', 'hub'], defaultView: 'agenda' },
     chofer: { tabs: ['home', 'agenda', 'perfil'], defaultView: 'agenda' },
     afiliador: { tabs: ['home', 'agendar', 'perfil'], defaultView: 'agendar' }
   };
@@ -1437,6 +1456,35 @@
   function guardarRol(r){
     rolActivo = r;
   }
+
+  /* ==========================================================================
+     Marketplace multiempresa (rama "demo"). Cada empresa/pozo asociado tiene su propio
+     "sub-espacio": su propia agenda (ver ordenarDelDia()/renderStats()), su propia
+     Contabilidad (ver pedidosDelPeriodo()/gastosDelPeriodo()) y su propia flota de
+     choferes (ver poblarSelectChofer()) — todo filtrado por empresaActivaId, sin duplicar
+     el código de esas vistas. El switch de empresa (topbar, solo Administrador) simula
+     entrar al espacio de cada proveedor; "kunturmasha" es la Sede Central que opera el Hub
+     Central/subasta y sus reglas están marcadas con esSedeCentral.
+     Kunturmasha es la única con choferes/afiliadores reales (CREDENCIALES_PERSONAL); las
+     otras dos parten vacías con un par de nombres de chofer de ejemplo, listas para que la
+     demo muestre pedidos propios en cuanto ganen una subasta.
+     ========================================================================== */
+  var EMPRESA_ACTIVA_KEY = 'kunturmasha_empresa_activa_v1';
+  var EMPRESAS = [
+    { id: 'kunturmasha', nombre: 'Sede Central Kunturmasha', esSedeCentral: true, comisionPeaje: 0.10, choferesDemo: [] },
+    { id: 'pozo-norte', nombre: 'Empresa Pozo Norte', esSedeCentral: false, comisionPeaje: 0.10, choferesDemo: ['Chofer Pozo Norte 1'] },
+    { id: 'pozo-este', nombre: 'Empresa Pozo Este', esSedeCentral: false, comisionPeaje: 0.10, choferesDemo: ['Chofer Pozo Este 1'] }
+  ];
+  function buscarEmpresa(id){
+    return EMPRESAS.find(function(e){ return e.id === id; }) || EMPRESAS[0];
+  }
+  function cargarEmpresaActiva(){
+    try{
+      var id = localStorage.getItem(EMPRESA_ACTIVA_KEY);
+      return (id && buscarEmpresa(id).id === id) ? id : 'kunturmasha';
+    }catch(e){ return 'kunturmasha'; }
+  }
+  var empresaActivaId = cargarEmpresaActiva();
 
   function cargarNombreAfiliador(){
     try{ return localStorage.getItem(AFILIADOR_NOMBRE_KEY) || ''; }catch(e){ return ''; }
@@ -1592,6 +1640,7 @@
       if(p.motivoCancelacion === undefined) p.motivoCancelacion = '';
       if(p.afiliadorEmail === undefined) p.afiliadorEmail = '';
       if(p.telefono === undefined) p.telefono = '';
+      if(p.empresaId === undefined) p.empresaId = 'kunturmasha';
       if(!Array.isArray(p.tiempos) || p.tiempos.length !== ETAPAS.length) p.tiempos = tiemposVacios();
       // Blindaje del ciclo de vida: cualquier pedido con estado ausente, vacío o que
       // no exista en FLUJO_ESTADOS/ESTADOS_FALLIDOS (dato corrupto, import manual de
@@ -1702,17 +1751,41 @@
     filterGroup: document.getElementById('filterGroup')
   };
 
-  // "Chofer" y "Conseguido por / Afiliador" se llenan desde CREDENCIALES_PERSONAL/PERSONAS
-  // (no texto libre) para que sus valores calcen siempre con lo que usa el cálculo de
-  // comisiones — ver calcularComisionesChofer()/calcularComisionesPromotor() más abajo.
-  els.chofer.innerHTML = '<option value="">— Sin asignar —</option>' +
-    CREDENCIALES_PERSONAL.filter(function(c){ return c.rol === 'Chofer'; })
-      .map(function(c){ return '<option value="' + escapeHtml(c.nombre) + '">' + escapeHtml(c.nombre) + '</option>'; }).join('');
-  // Todo el personal puede figurar como "Conseguido por" (Administradores y Choferes
-  // incluidos, no solo Afiliadores) — por eso se arma desde PERSONAS (una fila por persona
-  // real, ver más arriba), no desde CREDENCIALES_PERSONAL filtrado por rol.
+  // "Chofer" se llena según la flota de la empresa activa: Kunturmasha usa sus choferes
+  // reales (CREDENCIALES_PERSONAL) para que calce con el cálculo de comisiones; las demás
+  // empresas del marketplace (Pozo Norte/Este) usan su roster de ejemplo (EMPRESAS[].choferesDemo)
+  // — se repuebla cada vez que cambia la empresa activa, ver cambiarEmpresaActiva().
+  function poblarSelectChofer(){
+    var empresa = buscarEmpresa(empresaActivaId);
+    var nombres = empresa.id === 'kunturmasha' ?
+      CREDENCIALES_PERSONAL.filter(function(c){ return c.rol === 'Chofer'; }).map(function(c){ return c.nombre; }) :
+      empresa.choferesDemo;
+    els.chofer.innerHTML = '<option value="">— Sin asignar —</option>' +
+      nombres.map(function(n){ return '<option value="' + escapeHtml(n) + '">' + escapeHtml(n) + '</option>'; }).join('');
+  }
+  poblarSelectChofer();
+  // "Conseguido por / Afiliador" se llena desde PERSONAS (no texto libre) para que sus
+  // valores calcen siempre con lo que usa el cálculo de comisiones — todo el personal puede
+  // figurar ahí (Administradores y Choferes incluidos, no solo Afiliadores), sin importar
+  // qué empresa esté activa (es la red de promotores de toda la plataforma).
   els.conseguidoPor.innerHTML = '<option value="">— Cliente directo (sin afiliador) —</option>' +
     PERSONAS.map(function(pe){ return '<option value="' + escapeHtml(pe.id) + '">' + escapeHtml(pe.nombre) + '</option>'; }).join('');
+
+  var empresaSelectorEl = document.getElementById('empresaSelector');
+  empresaSelectorEl.innerHTML = EMPRESAS.map(function(e){ return '<option value="' + escapeHtml(e.id) + '">' + escapeHtml(e.nombre) + '</option>'; }).join('');
+  empresaSelectorEl.value = empresaActivaId;
+  // Cambiar de empresa activa reordena qué ve el Administrador: su propia Agenda,
+  // Contabilidad, flota de choferes (poblarSelectChofer) y la Sala de Subasta del Hub
+  // Central si está abierta — todo deriva de empresaActivaId, no se duplica código de vista.
+  function cambiarEmpresaActiva(id){
+    if(!EMPRESAS.some(function(e){ return e.id === id; })) return;
+    empresaActivaId = id;
+    try{ localStorage.setItem(EMPRESA_ACTIVA_KEY, id); }catch(e){}
+    poblarSelectChofer();
+    renderTodo();
+    if(vistaActual === 'contabilidad') renderContabilidad();
+  }
+  empresaSelectorEl.addEventListener('change', function(){ cambiarEmpresaActiva(this.value); });
 
   // Vista previa en vivo de la hora en formato 12h AM/PM junto a cada <input type="time">,
   // para que quede clarísimo qué hora se está eligiendo (el input nativo ya admite el
@@ -1913,7 +1986,7 @@
   /* ---------- Estadísticas del día ---------- */
   var statTileCache = [];
   function renderStats(){
-    var delDia = pedidos.filter(function(p){ return p.fecha === fechaSeleccionada; });
+    var delDia = pedidos.filter(function(p){ return p.fecha === fechaSeleccionada && (p.empresaId || 'kunturmasha') === empresaActivaId; });
     var abiertos = delDia.filter(esAbierto);
     var completados = delDia.filter(function(p){ return p.estado === 'Completado'; });
     var fallidos = delDia.filter(esFallido).length;
@@ -2028,7 +2101,9 @@
   // mismo criterio, o los botones ⬆ ⬇ moverían pedidos a posiciones que no coinciden con
   // lo que se ve en pantalla.
   function ordenarDelDia(fecha){
-    var deDia = pedidos.filter(function(p){ return p.fecha === fecha; });
+    // Filtrado por empresaActivaId: cada empresa/pozo asociado ve solo su propia agenda —
+    // los pedidos ya existentes (de antes del marketplace multiempresa) son de 'kunturmasha'.
+    var deDia = pedidos.filter(function(p){ return p.fecha === fecha && (p.empresaId || 'kunturmasha') === empresaActivaId; });
     deDia.sort(function(a, b){
       var aAbierto = esAbierto(a) ? 0 : 1;
       var bAbierto = esAbierto(b) ? 0 : 1;
@@ -2415,6 +2490,7 @@
       // registra el pedido tiene sesión de Afiliador, se autocompleta con esa cuenta (mismo
       // comportamiento que antes) — así nadie deja de llevarse su comisión por descuido.
       afiliadorEmail: els.conseguidoPor.value || ((rolActivo === 'afiliador' && usuarioActual) ? (personaDeCredencial(buscarCredencial(usuarioActual.email)) || {}).id || '' : ''),
+      empresaId: empresaActivaId,
       tipoAlmacen: tipo,
       piso: tipo === 'Tanque Elevado' ? document.getElementById('piso').value + '° Piso' : '-',
       dificultad: document.getElementById('dificultad').value,
@@ -2628,8 +2704,8 @@
 
   /* ---------- Vistas: Inicio / Agenda / Cotizar / Agendar / Contabilidad / Mi Perfil / Ajustes ---------- */
   var vistaActual = 'home';
-  var VISTAS = ['home', 'agenda', 'cotizar', 'agendar', 'contabilidad', 'perfil', 'ajustes'];
-  var ID_VISTA = { home: 'vistaHome', agenda: 'vistaAgenda', cotizar: 'vistaCotizar', agendar: 'vistaAgendar', contabilidad: 'vistaContabilidad', perfil: 'vistaPerfil', ajustes: 'vistaAjustes' };
+  var VISTAS = ['home', 'agenda', 'cotizar', 'hub', 'agendar', 'contabilidad', 'perfil', 'ajustes'];
+  var ID_VISTA = { home: 'vistaHome', agenda: 'vistaAgenda', cotizar: 'vistaCotizar', hub: 'vistaHub', agendar: 'vistaAgendar', contabilidad: 'vistaContabilidad', perfil: 'vistaPerfil', ajustes: 'vistaAjustes' };
 
   function irAVista(nombre){
     if(VISTAS.indexOf(nombre) === -1) nombre = 'home';
@@ -2640,6 +2716,7 @@
     if(nombre === 'agenda') renderTodo();
     if(nombre === 'perfil') renderPerfil();
     if(nombre === 'ajustes') renderAjustes();
+    if(nombre === 'hub') renderHub();
     window.scrollTo(0, 0);
   }
 
@@ -2675,6 +2752,10 @@
     document.getElementById('btnIrAgendar').hidden = permitidas.indexOf('agendar') === -1;
     // Copiar/reemplazar TODOS los pedidos es una acción de administración — no para "cliente".
     document.getElementById('btnBackup').hidden = rolActivo === 'cliente';
+    // El switch de empresa (marketplace multiempresa) es un control de simulación para
+    // Administradores — Chofer/Afiliador ya pertenecen a una sola empresa implícitamente,
+    // y Cliente no administra ninguna.
+    document.getElementById('empresaSwitch').hidden = rolActivo !== 'admin';
   }
 
   function actualizarAfiliadorUI(){
@@ -2789,7 +2870,8 @@
       fecha: document.getElementById('gastoFecha').value || HOY,
       categoria: document.getElementById('gastoCategoria').value,
       descripcion: document.getElementById('gastoDescripcion').value,
-      monto: parseFloat(document.getElementById('gastoMonto').value) || 0
+      monto: parseFloat(document.getElementById('gastoMonto').value) || 0,
+      empresaId: empresaActivaId
     });
     guardarGastos();
     gastoForm.reset();
@@ -2833,11 +2915,11 @@
 
   function pedidosDelPeriodo(){
     var r = rangoDelPeriodo();
-    return pedidos.filter(function(p){ return p.fecha >= r.desde && p.fecha <= r.hasta; });
+    return pedidos.filter(function(p){ return p.fecha >= r.desde && p.fecha <= r.hasta && (p.empresaId || 'kunturmasha') === empresaActivaId; });
   }
   function gastosDelPeriodo(){
     var r = rangoDelPeriodo();
-    return gastos.filter(function(g){ return g.fecha >= r.desde && g.fecha <= r.hasta; });
+    return gastos.filter(function(g){ return g.fecha >= r.desde && g.fecha <= r.hasta && (g.empresaId || 'kunturmasha') === empresaActivaId; });
   }
 
   /* ---------- Sistema contable simulado ---------- */
@@ -3344,7 +3426,8 @@
       piso: p.piso != null ? String(p.piso) : '-', dificultad: p.dificultad || '', manguera: p.manguera || '',
       notas: p.notas || '', estado: p.estado || '', motivo_cancelacion: p.motivoCancelacion || '',
       tiempos: Array.isArray(p.tiempos) ? p.tiempos : tiemposVacios(),
-      afiliador_email: p.afiliadorEmail || '', telefono: p.telefono || ''
+      afiliador_email: p.afiliadorEmail || '', telefono: p.telefono || '',
+      empresa_id: p.empresaId || 'kunturmasha'
     };
   }
   function pedidoDesdeRemoto(r){
@@ -3354,14 +3437,14 @@
       chofer: r.chofer, ayudante: r.ayudante, tipoAlmacen: r.tipo_almacen, piso: r.piso,
       dificultad: r.dificultad, manguera: r.manguera, notas: r.notas, estado: r.estado,
       motivoCancelacion: r.motivo_cancelacion, tiempos: r.tiempos, afiliadorEmail: r.afiliador_email || '',
-      telefono: r.telefono || ''
+      telefono: r.telefono || '', empresaId: r.empresa_id || 'kunturmasha'
     };
   }
   function gastoARemoto(g){
-    return { id: g.id, fecha: g.fecha, categoria: g.categoria || '', descripcion: g.descripcion || '', monto: Number(g.monto) || 0 };
+    return { id: g.id, fecha: g.fecha, categoria: g.categoria || '', descripcion: g.descripcion || '', monto: Number(g.monto) || 0, empresa_id: g.empresaId || 'kunturmasha' };
   }
   function gastoDesdeRemoto(r){
-    return { id: r.id, fecha: r.fecha, categoria: r.categoria, descripcion: r.descripcion, monto: r.monto };
+    return { id: r.id, fecha: r.fecha, categoria: r.categoria, descripcion: r.descripcion, monto: r.monto, empresaId: r.empresa_id || 'kunturmasha' };
   }
 
   // Combina lo que había en este navegador con lo que ya existía en Supabase al conectar
@@ -3481,6 +3564,8 @@
     canalRealtime = supa.channel('despacho-hidrico-cambios')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos' }, function(){ programarRefresco('pedidos'); })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'gastos' }, function(){ programarRefresco('gastos'); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'solicitudes_centrales' }, function(){ programarRefrescoHub(); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ofertas_subasta' }, function(){ programarRefrescoHub(); })
       .subscribe(function(status){
         if(status === 'SUBSCRIBED'){
           intentosReconexionCanal = 0;
@@ -3556,6 +3641,306 @@
     if(!supaListo) iniciarSupabase();
     else { refrescarDesdeSupabase('pedidos'); refrescarDesdeSupabase('gastos'); }
   });
+
+  /* ==========================================================================
+     Hub Central + Subasta (marketplace multiempresa, rama "demo"). Dos tablas nuevas e
+     independientes de pedidos/gastos (ver supabase_schema.sql): solicitudes_centrales
+     (lo que publica un cliente) y ofertas_subasta (lo que oferta cada empresa). El cierre
+     de una subasta NO depende de un cron en el servidor — se resuelve en el navegador de
+     quien la esté mirando cuando el tiempo se cumple (resolverSubastasVencidas()); el
+     update en Supabase lleva `.eq('estado','Abierta')` como guardia atómica, así que si dos
+     personas la resuelven al mismo instante, solo la primera escritura cuenta y solo esa
+     crea el pedido — la segunda no encuentra fila que actualizar y no hace nada más.
+     ========================================================================== */
+  var MIS_SOLICITUDES_KEY = 'kunturmasha_mis_solicitudes_v1';
+  function cargarMisSolicitudes(){
+    try{ var l = JSON.parse(localStorage.getItem(MIS_SOLICITUDES_KEY) || '[]'); return Array.isArray(l) ? l : []; }
+    catch(e){ return []; }
+  }
+  var misSolicitudesIds = cargarMisSolicitudes();
+  function guardarMisSolicitudes(){ try{ localStorage.setItem(MIS_SOLICITUDES_KEY, JSON.stringify(misSolicitudesIds)); }catch(e){} }
+
+  var solicitudesCentrales = [];
+  var ofertasSubasta = [];
+  var hubDebounce = null;
+  var hubTimerInterval = null;
+  var VENTANA_SUBASTA_MIN = 30;
+
+  function solicitudARemoto(s){
+    return {
+      id: s.id, cliente: s.cliente || '', telefono: s.telefono || '', volumen_m3: Number(s.volumenM3) || 0,
+      ubicacion: s.ubicacion || '', tipo_descarga: s.tipoDescarga || '', hora_fin: s.horaFin, estado: s.estado || 'Abierta',
+      empresa_ganadora_id: s.empresaGanadoraId || null, oferta_ganadora_precio: s.ofertaGanadoraPrecio || null,
+      oferta_ganadora_tiempo: s.ofertaGanadoraTiempo || null, comision_sede_central: s.comisionSedeCentral || null,
+      pedido_generado_id: s.pedidoGeneradoId || null
+    };
+  }
+  function solicitudDesdeRemoto(r){
+    return {
+      id: r.id, cliente: r.cliente, telefono: r.telefono, volumenM3: r.volumen_m3, ubicacion: r.ubicacion,
+      tipoDescarga: r.tipo_descarga, horaFin: r.hora_fin, estado: r.estado, empresaGanadoraId: r.empresa_ganadora_id,
+      ofertaGanadoraPrecio: r.oferta_ganadora_precio, ofertaGanadoraTiempo: r.oferta_ganadora_tiempo,
+      comisionSedeCentral: r.comision_sede_central, pedidoGeneradoId: r.pedido_generado_id
+    };
+  }
+  function ofertaARemoto(o){
+    return { id: o.id, solicitud_id: o.solicitudId, empresa_id: o.empresaId, precio: Number(o.precio) || 0, tiempo_entrega_min: Number(o.tiempoEntregaMin) || 0 };
+  }
+  function ofertaDesdeRemoto(r){
+    return { id: r.id, solicitudId: r.solicitud_id, empresaId: r.empresa_id, precio: r.precio, tiempoEntregaMin: r.tiempo_entrega_min };
+  }
+
+  function refrescarHub(){
+    if(!supa) return;
+    Promise.all([
+      supa.from('solicitudes_centrales').select('*').order('created_at', { ascending: false }),
+      supa.from('ofertas_subasta').select('*')
+    ]).then(function(res){
+      var rSol = res[0], rOf = res[1];
+      if(rSol.error || rOf.error){
+        console.warn('Hub Central: no se pudo leer (¿falta correr la sección "Marketplace" de supabase_schema.sql?)', (rSol.error || rOf.error).message);
+        return;
+      }
+      solicitudesCentrales = rSol.data.map(solicitudDesdeRemoto);
+      ofertasSubasta = rOf.data.map(ofertaDesdeRemoto);
+      resolverSubastasVencidas();
+      if(vistaActual === 'hub') renderHub();
+    }).catch(function(err){ console.warn('Hub Central: fallo de red', err); });
+  }
+  function programarRefrescoHub(){
+    clearTimeout(hubDebounce);
+    hubDebounce = setTimeout(refrescarHub, 400);
+  }
+
+  // Menor precio gana; empate lo rompe el tiempo de entrega más rápido.
+  function mejorOferta(solicitudId){
+    var ofertas = ofertasSubasta.filter(function(o){ return o.solicitudId === solicitudId; });
+    if(!ofertas.length) return null;
+    return ofertas.slice().sort(function(a, b){
+      if(a.precio !== b.precio) return a.precio - b.precio;
+      return a.tiempoEntregaMin - b.tiempoEntregaMin;
+    })[0];
+  }
+
+  function horaActualHHMM(d){
+    d = d || new Date();
+    return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  }
+
+  // Cierra y adjudica una solicitud vencida (o cerrada a mano, ver "Adjudicar ahora"): calcula
+  // la mejor oferta, escribe el resultado en Supabase con guardia atómica (.eq('estado',
+  // 'Abierta')) para que dos navegadores resolviendo al mismo tiempo no dupliquen el pedido,
+  // retiene la comisión de peaje de Sede Central, y transfiere el viaje a la agenda interna
+  // de la empresa ganadora (nuevo pedido con su empresaId, teléfono ya desbloqueado).
+  async function adjudicarSolicitud(solicitud){
+    if(!supa) return;
+    var ganadora = mejorOferta(solicitud.id);
+    if(!ganadora){
+      await supa.from('solicitudes_centrales').update({ estado: 'Cerrada sin ofertas' }).eq('id', solicitud.id).eq('estado', 'Abierta');
+      refrescarHub();
+      return;
+    }
+    var empresaGanadora = buscarEmpresa(ganadora.empresaId);
+    var comision = ganadora.precio * (empresaGanadora.comisionPeaje || 0);
+    var nuevoPedidoId = siguienteId();
+    var upd = await supa.from('solicitudes_centrales')
+      .update({
+        estado: 'Adjudicada', empresa_ganadora_id: empresaGanadora.id,
+        oferta_ganadora_precio: ganadora.precio, oferta_ganadora_tiempo: ganadora.tiempoEntregaMin,
+        comision_sede_central: comision, pedido_generado_id: nuevoPedidoId
+      })
+      .eq('id', solicitud.id).eq('estado', 'Abierta').select();
+    if(!upd.data || !upd.data.length) { refrescarHub(); return; } // otro navegador ya la adjudicó primero
+
+    var horaInicio = horaActualHHMM();
+    var nuevoPedido = {
+      id: nuevoPedidoId, fecha: isoHoy(), orden: siguienteOrden(isoHoy()),
+      cliente: solicitud.cliente || ('Cliente Hub ' + solicitud.id), codigoCliente: obtenerCodigoParaCliente(solicitud.cliente || solicitud.id),
+      telefono: solicitud.telefono || '', ubicacion: solicitud.ubicacion || '',
+      horaInicio: horaInicio, horaFin: sumarMinutosHora(horaInicio, 120), precio: ganadora.precio,
+      chofer: '', ayudante: '', tipoAlmacen: solicitud.tipoDescarga || '', piso: '-', dificultad: '', manguera: '',
+      notas: 'Adjudicado por el Hub Central (subasta ' + solicitud.id + ', ' + solicitud.volumenM3 + ' m³) — tiempo de entrega ofertado: ' + ganadora.tiempoEntregaMin + ' min.',
+      estado: 'Programado', motivoCancelacion: '', tiempos: tiemposVacios(), afiliadorEmail: '', empresaId: empresaGanadora.id
+    };
+    pedidos = migrarPedidos(pedidos.concat([nuevoPedido]));
+    guardarPedidos();
+    if(empresaGanadora.id === empresaActivaId) renderTodo();
+    refrescarHub();
+  }
+
+  function resolverSubastasVencidas(){
+    if(!supa) return;
+    var ahora = Date.now();
+    solicitudesCentrales
+      .filter(function(s){ return s.estado === 'Abierta' && new Date(s.horaFin).getTime() <= ahora; })
+      .forEach(function(s){ adjudicarSolicitud(s); });
+  }
+
+  function formatCuentaRegresiva(ms){
+    var totalSeg = Math.max(0, Math.ceil(ms / 1000));
+    var m = Math.floor(totalSeg / 60), s = totalSeg % 60;
+    return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+  }
+  // Actualiza solo el texto de las cuentas regresivas ya en pantalla (no repinta renderHub()
+  // entero) — así no se pierde el foco de quien está escribiendo su oferta mientras el
+  // segundero corre. Si alguna llega a 00:00, dispara la resolución (que sí repinta, una vez).
+  function actualizarCuentasRegresivas(){
+    var vencida = false;
+    document.querySelectorAll('.cuenta-regresiva').forEach(function(el){
+      var restante = new Date(el.dataset.fin).getTime() - Date.now();
+      el.textContent = formatCuentaRegresiva(restante);
+      if(restante <= 0) vencida = true;
+    });
+    if(vencida) resolverSubastasVencidas();
+  }
+  function iniciarTimerHub(){
+    if(hubTimerInterval) return;
+    hubTimerInterval = setInterval(function(){
+      if(vistaActual !== 'hub'){ clearInterval(hubTimerInterval); hubTimerInterval = null; return; }
+      actualizarCuentasRegresivas();
+    }, 1000);
+  }
+
+  function tablaOfertas(solicitudId){
+    var ofertas = ofertasSubasta.filter(function(o){ return o.solicitudId === solicitudId; })
+      .slice().sort(function(a, b){ return a.precio - b.precio || a.tiempoEntregaMin - b.tiempoEntregaMin; });
+    if(!ofertas.length) return '<p class="campo-nota" style="margin:6px 0 0;">Todavía sin ofertas.</p>';
+    var filas = ofertas.map(function(o, i){
+      return '<tr' + (i === 0 ? ' style="color:var(--good); font-weight:700;"' : '') + '><td>' + escapeHtml(buscarEmpresa(o.empresaId).nombre) + '</td><td class="num">' + formatMoneda(o.precio) + '</td><td class="num">' + o.tiempoEntregaMin + ' min</td></tr>';
+    }).join('');
+    return '<div class="tabla-wrap"><table class="tabla-registro"><thead><tr><th>Empresa</th><th class="num">Precio</th><th class="num">Entrega</th></tr></thead><tbody>' + filas + '</tbody></table></div>';
+  }
+
+  function renderHubCliente(){
+    var propias = solicitudesCentrales.filter(function(s){ return misSolicitudesIds.indexOf(s.id) !== -1; });
+    var filasPropias = propias.map(function(s){
+      var estadoHtml;
+      if(s.estado === 'Abierta') estadoHtml = '⏳ En subasta — cierra en <span class="cuenta-regresiva mono" data-fin="' + s.horaFin + '">' + formatCuentaRegresiva(new Date(s.horaFin).getTime() - Date.now()) + '</span>';
+      else if(s.estado === 'Adjudicada') estadoHtml = '✅ Adjudicado a <strong>' + escapeHtml(buscarEmpresa(s.empresaGanadoraId).nombre) + '</strong> — ' + formatMoneda(s.ofertaGanadoraPrecio) + ', entrega en ' + s.ofertaGanadoraTiempo + ' min';
+      else estadoHtml = '✖️ Cerrada sin ofertas — intenta de nuevo o escríbenos por WhatsApp';
+      return '<div class="panel" style="margin-bottom:12px;"><div class="order-client">' + escapeHtml(s.ubicacion) + ' · ' + s.volumenM3 + ' m³ · ' + escapeHtml(s.tipoDescarga) + '</div><p class="campo-nota" style="margin:6px 0 0;">' + estadoHtml + '</p></div>';
+    }).join('');
+
+    return '<div class="panel form-panel">' +
+        '<h2>Publica tu solicitud de agua</h2>' +
+        '<p class="campo-nota">Las empresas asociadas verán tu pedido y ofertarán precio y tiempo de entrega durante ' + VENTANA_SUBASTA_MIN + ' minutos — tu teléfono solo se comparte con la empresa que gane.</p>' +
+        '<form id="hubClienteForm">' +
+          '<div class="form-group"><label>Cliente / contacto</label><input type="text" id="hubCliente" required></div>' +
+          '<div class="form-group"><label>Teléfono / WhatsApp de contacto</label><input type="tel" id="hubTelefono" required></div>' +
+          '<div class="form-row">' +
+            '<div class="form-group"><label>Volumen (m³)</label><input type="number" id="hubVolumen" min="1" step="0.5" value="7" required></div>' +
+            '<div class="form-group"><label>Tipo de descarga</label><select id="hubTipoDescarga"><option value="Tanque Elevado">Tanque Elevado</option><option value="Cisterna Subterránea / Pozo">Cisterna Subt. / Pozo</option><option value="Bidones / Cilindros">Bidones / Cilindros</option></select></div>' +
+          '</div>' +
+          '<div class="form-group"><label>Ubicación / destino</label><select id="hubUbicacion">' + DISTRITOS.map(function(d){ return '<option value="' + escapeHtml(d) + '">' + d + '</option>'; }).join('') + '</select></div>' +
+          '<button type="submit" class="btn" style="width:100%;">Publicar solicitud</button>' +
+          '<p class="modal-status" id="hubClienteStatus"></p>' +
+        '</form>' +
+      '</div>' +
+      (propias.length ? '<h3 style="font-size:0.9rem; margin:20px 0 10px;">Tus solicitudes</h3>' + filasPropias : '');
+  }
+
+  function renderHubEmpresa(){
+    var empresa = buscarEmpresa(empresaActivaId);
+    var abiertas = solicitudesCentrales.filter(function(s){ return s.estado === 'Abierta'; });
+    var propias = solicitudesCentrales.filter(function(s){ return s.estado !== 'Abierta' && (s.empresaGanadoraId === empresa.id || ofertasSubasta.some(function(o){ return o.solicitudId === s.id && o.empresaId === empresa.id; })); });
+
+    var tarjetasAbiertas = abiertas.map(function(s){
+      var miOferta = ofertasSubasta.find(function(o){ return o.solicitudId === s.id && o.empresaId === empresa.id; });
+      var restante = new Date(s.horaFin).getTime() - Date.now();
+      var botonAdjudicar = empresa.esSedeCentral ?
+        '<button type="button" class="btn-ghost btn-adjudicar-ahora" data-id="' + s.id + '" style="margin-top:8px; font-size:0.72rem; padding:6px 12px;">⏹ Cerrar y adjudicar ahora (Sede Central)</button>' : '';
+      return '<div class="panel" style="margin-bottom:14px;">' +
+          '<div class="order-head"><div class="order-time">📍 ' + escapeHtml(s.ubicacion) + '</div><div class="order-price mono">⏳ <span class="cuenta-regresiva" data-fin="' + s.horaFin + '">' + formatCuentaRegresiva(restante) + '</span></div></div>' +
+          '<div class="order-meta"><span class="meta-tag">💧 ' + s.volumenM3 + ' m³</span><span class="meta-tag">' + escapeHtml(s.tipoDescarga) + '</span><span class="meta-tag">🔒 Teléfono oculto hasta ganar</span></div>' +
+          tablaOfertas(s.id) +
+          '<form class="oferta-form" data-solicitud="' + s.id + '" style="display:flex; gap:8px; flex-wrap:wrap; align-items:end; margin-top:10px;">' +
+            '<div class="form-group" style="margin:0; flex:1 1 120px;"><label>Tu precio (S/.)</label><input type="number" class="oferta-precio" min="1" step="0.01" value="' + (miOferta ? miOferta.precio : '') + '" required></div>' +
+            '<div class="form-group" style="margin:0; flex:1 1 120px;"><label>Entrega (min)</label><input type="number" class="oferta-tiempo" min="1" value="' + (miOferta ? miOferta.tiempoEntregaMin : '') + '" required></div>' +
+            '<button type="submit" class="btn" style="padding:9px 16px;">' + (miOferta ? 'Actualizar oferta' : 'Ofertar') + '</button>' +
+          '</form>' +
+          botonAdjudicar +
+        '</div>';
+    }).join('') || '<div class="empty-state">Sin solicitudes abiertas por ahora.</div>';
+
+    var filasHistorial = propias.slice(0, 15).map(function(s){
+      var gane = s.empresaGanadoraId === empresa.id;
+      var estado = s.estado === 'Adjudicada' ? (gane ? '🏆 Ganada' : 'Perdida') : 'Cerrada sin ofertas';
+      var telefono = gane ? escapeHtml(s.telefono || '') : (s.estado === 'Adjudicada' ? '🔒' : '—');
+      return '<tr><td>' + escapeHtml(s.ubicacion) + '</td><td class="num">' + s.volumenM3 + ' m³</td><td>' + estado + '</td><td class="num">' + (gane ? formatMoneda(s.ofertaGanadoraPrecio) : '—') + '</td><td>' + telefono + '</td></tr>';
+    }).join('');
+
+    var comisionSedeCentral = empresa.esSedeCentral ?
+      ('<div class="panel" style="margin-top:16px;"><h2>Comisión de intermediación (Sede Central)</h2>' +
+        '<div class="stats-strip">' + tileHtml({ label: 'Retenido en subastas adjudicadas', value: formatMoneda(solicitudesCentrales.filter(function(s){ return s.estado === 'Adjudicada'; }).reduce(function(sum, s){ return sum + (Number(s.comisionSedeCentral) || 0); }, 0)), cls: 'good' }) + '</div></div>') : '';
+
+    return '<div class="panel"><h2>🏢 ' + escapeHtml(empresa.nombre) + ' — Sala de Subasta</h2>' +
+        '<p class="campo-nota">Ofertas de precio y tiempo de entrega sobre las solicitudes abiertas del Hub Central. La mejor oferta (menor precio, luego menor tiempo) gana al cerrar la ventana de ' + VENTANA_SUBASTA_MIN + ' min.</p>' +
+      '</div>' +
+      tarjetasAbiertas +
+      '<div class="panel" style="margin-top:16px;"><h2>Historial de subastas de tu empresa</h2>' +
+        (filasHistorial ? '<div class="tabla-wrap"><table class="tabla-registro"><thead><tr><th>Ubicación</th><th class="num">Volumen</th><th>Resultado</th><th class="num">Precio</th><th>Teléfono</th></tr></thead><tbody>' + filasHistorial + '</tbody></table></div>' : '<div class="empty-state">Todavía no participaste en ninguna subasta.</div>') +
+      '</div>' + comisionSedeCentral;
+  }
+
+  function activarListenersHub(){
+    var formCliente = document.getElementById('hubClienteForm');
+    if(formCliente) formCliente.addEventListener('submit', async function(e){
+      e.preventDefault();
+      if(!supa){ document.getElementById('hubClienteStatus').textContent = 'Sin conexión — intenta más tarde.'; return; }
+      var nueva = {
+        id: 'SOL-' + Date.now().toString(36).toUpperCase(),
+        cliente: document.getElementById('hubCliente').value.trim(),
+        telefono: document.getElementById('hubTelefono').value.trim(),
+        volumenM3: parseFloat(document.getElementById('hubVolumen').value) || 0,
+        ubicacion: document.getElementById('hubUbicacion').value,
+        tipoDescarga: document.getElementById('hubTipoDescarga').value,
+        horaFin: new Date(Date.now() + VENTANA_SUBASTA_MIN * 60000).toISOString(),
+        estado: 'Abierta'
+      };
+      var res = await supa.from('solicitudes_centrales').insert(solicitudARemoto(nueva));
+      var status = document.getElementById('hubClienteStatus');
+      if(res.error){ status.textContent = 'No se pudo publicar: ' + res.error.message; status.className = 'modal-status err'; return; }
+      misSolicitudesIds.push(nueva.id);
+      guardarMisSolicitudes();
+      status.textContent = '¡Publicado! Las empresas ya pueden ofertar.';
+      status.className = 'modal-status ok';
+      refrescarHub();
+    });
+
+    document.querySelectorAll('.oferta-form').forEach(function(form){
+      form.addEventListener('submit', async function(e){
+        e.preventDefault();
+        if(!supa) return;
+        var solicitudId = form.dataset.solicitud;
+        var precio = parseFloat(form.querySelector('.oferta-precio').value);
+        var tiempo = parseInt(form.querySelector('.oferta-tiempo').value, 10);
+        if(!precio || !tiempo) return;
+        var existente = ofertasSubasta.find(function(o){ return o.solicitudId === solicitudId && o.empresaId === empresaActivaId; });
+        var oferta = { id: existente ? existente.id : ('OFE-' + Date.now().toString(36).toUpperCase()), solicitudId: solicitudId, empresaId: empresaActivaId, precio: precio, tiempoEntregaMin: tiempo };
+        await supa.from('ofertas_subasta').upsert(ofertaARemoto(oferta), { onConflict: 'solicitud_id,empresa_id' });
+        refrescarHub();
+      });
+    });
+
+    document.querySelectorAll('.btn-adjudicar-ahora').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var s = solicitudesCentrales.find(function(x){ return x.id === btn.dataset.id; });
+        if(s && confirm('¿Cerrar la subasta ahora mismo con las ofertas actuales?')) adjudicarSolicitud(s);
+      });
+    });
+  }
+
+  function renderHub(){
+    var cont = document.getElementById('hubContenido');
+    if(!supa){
+      cont.innerHTML = '<div class="panel"><div class="empty-state">El Hub Central necesita conexión a Supabase.</div></div>';
+      return;
+    }
+    cont.innerHTML = rolActivo === 'admin' ? renderHubEmpresa() : renderHubCliente();
+    activarListenersHub();
+    iniciarTimerHub();
+    if(!solicitudesCentrales.length && !ofertasSubasta.length) refrescarHub(); // primera carga
+  }
 
   /* ==========================================================================
      Autenticación del personal — SIN Supabase Auth. El correo/contraseña se
@@ -3857,6 +4242,7 @@
     actualizarListasPersonal();
     if(vistaActual === 'contabilidad') renderContabilidad();
     if(vistaActual === 'perfil') renderPerfil();
+    if(vistaActual === 'hub') renderHub();
   }
 
   // Arranque: la app se muestra de inmediato (clientes sin cuenta ven agenda/cotizar ya

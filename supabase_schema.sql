@@ -61,6 +61,14 @@ alter table public.pedidos add column if not exists afiliador_email text;
 -- Visible en la Agenda del día y en el registro detallado de Contabilidad.
 alter table public.pedidos add column if not exists telefono text;
 
+-- Empresa/pozo dueña de este pedido (marketplace multiempresa, rama "demo") — todo pedido
+-- ya existente antes de este cambio se backfillea a 'kunturmasha' (Sede Central), así que
+-- nada de lo ya registrado cambia de dueño. La app de producción (rama principal) no lee ni
+-- escribe esta columna: puede existir en la misma base sin que production note diferencia.
+alter table public.pedidos add column if not exists empresa_id text not null default 'kunturmasha';
+update public.pedidos set empresa_id = 'kunturmasha' where empresa_id is null;
+create index if not exists pedidos_empresa_idx on public.pedidos (empresa_id);
+
 -- ---------- Tabla: gastos ----------
 create table if not exists public.gastos (
   id           text primary key,
@@ -74,6 +82,11 @@ create table if not exists public.gastos (
 comment on table public.gastos is 'Gastos operativos registrados (combustible, mantenimiento, viáticos, etc.).';
 
 create index if not exists gastos_fecha_idx on public.gastos (fecha);
+
+-- Misma lógica que pedidos.empresa_id (ver arriba): Contabilidad queda independiente por
+-- empresa/pozo asociado. Gastos ya existentes quedan en 'kunturmasha'.
+alter table public.gastos add column if not exists empresa_id text not null default 'kunturmasha';
+update public.gastos set empresa_id = 'kunturmasha' where empresa_id is null;
 
 -- ============================================================================
 -- ---------- public.perfiles: YA NO SE USA (Supabase Auth fue retirado) --------
@@ -130,6 +143,79 @@ drop policy if exists "gastos_delete_admin" on public.gastos;
 drop policy if exists "gastos_acceso_abierto" on public.gastos;
 create policy "gastos_acceso_abierto" on public.gastos
   for all using (true) with check (true);
+
+-- ============================================================================
+-- ---------- Marketplace multiempresa: Hub Central + Subasta (rama "demo") ----
+-- ============================================================================
+-- Tablas nuevas e independientes de pedidos/gastos — production (rama principal) no las
+-- referencia en absoluto, así que aunque vivan en el mismo proyecto de Supabase, no hay
+-- ningún cambio de comportamiento posible en production por su sola existencia.
+
+-- Una solicitud pública que cualquier cliente publica sin cuenta (RLS abierta, igual que
+-- pedidos/gastos). "hora_fin" es el cierre de la ventana de subasta (30 min desde que se
+-- publica); el teléfono queda oculto en la pizarra de ofertas hasta que hay ganador —
+-- ese ocultamiento es solo de interfaz (ver nota de diseño al inicio del archivo).
+create table if not exists public.solicitudes_centrales (
+  id                      text primary key,
+  created_at              timestamptz not null default now(),
+  cliente                 text,
+  telefono                text,
+  volumen_m3              numeric(6,2),
+  ubicacion               text,
+  tipo_descarga           text,
+  hora_fin                timestamptz not null,
+  estado                  text not null default 'Abierta'
+                          check (estado in ('Abierta','Adjudicada','Cerrada sin ofertas')),
+  empresa_ganadora_id     text,
+  oferta_ganadora_precio  numeric(10,2),
+  oferta_ganadora_tiempo  int,               -- minutos de entrega ofrecidos por el ganador
+  comision_sede_central   numeric(10,2),
+  pedido_generado_id      text               -- id en public.pedidos creado al adjudicar
+);
+comment on table public.solicitudes_centrales is 'Hub Central: solicitudes de agua publicadas por clientes, a subasta entre empresas asociadas.';
+create index if not exists solicitudes_estado_idx on public.solicitudes_centrales (estado);
+
+-- Una oferta de una empresa sobre una solicitud — varias empresas pueden ofertar sobre la
+-- misma solicitud; "upsert" por (solicitud_id, empresa_id) para que actualizar tu oferta
+-- reemplace la anterior en vez de acumular filas.
+create table if not exists public.ofertas_subasta (
+  id                  text primary key,
+  solicitud_id        text not null references public.solicitudes_centrales(id) on delete cascade,
+  empresa_id          text not null,
+  precio              numeric(10,2) not null,
+  tiempo_entrega_min  int not null,
+  created_at          timestamptz not null default now(),
+  unique (solicitud_id, empresa_id)
+);
+comment on table public.ofertas_subasta is 'Ofertas de precio/tiempo de entrega de cada empresa sobre una solicitud del Hub Central.';
+
+alter table public.solicitudes_centrales enable row level security;
+alter table public.ofertas_subasta       enable row level security;
+
+drop policy if exists "solicitudes_acceso_abierto" on public.solicitudes_centrales;
+create policy "solicitudes_acceso_abierto" on public.solicitudes_centrales
+  for all using (true) with check (true);
+
+drop policy if exists "ofertas_acceso_abierto" on public.ofertas_subasta;
+create policy "ofertas_acceso_abierto" on public.ofertas_subasta
+  for all using (true) with check (true);
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'solicitudes_centrales'
+  ) then
+    alter publication supabase_realtime add table public.solicitudes_centrales;
+  end if;
+
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'ofertas_subasta'
+  ) then
+    alter publication supabase_realtime add table public.ofertas_subasta;
+  end if;
+end $$;
 
 -- ---------- Realtime ----------
 -- Para que la app reciba cambios en vivo (otro dispositivo agenda/edita/borra
