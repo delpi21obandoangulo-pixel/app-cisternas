@@ -3813,16 +3813,16 @@
     return '<div class="tabla-wrap"><table class="tabla-registro"><thead><tr><th>Empresa</th><th class="num">Precio</th><th class="num">Entrega</th></tr></thead><tbody>' + filas + '</tbody></table></div>';
   }
 
-  function renderHubCliente(){
-    var propias = solicitudesCentrales.filter(function(s){ return misSolicitudesIds.indexOf(s.id) !== -1; });
-    var filasPropias = propias.map(function(s){
-      var estadoHtml;
-      if(s.estado === 'Abierta') estadoHtml = '⏳ En subasta — cierra en <span class="cuenta-regresiva mono" data-fin="' + s.horaFin + '">' + formatCuentaRegresiva(new Date(s.horaFin).getTime() - Date.now()) + '</span>';
-      else if(s.estado === 'Adjudicada') estadoHtml = '✅ Adjudicado a <strong>' + escapeHtml(buscarEmpresa(s.empresaGanadoraId).nombre) + '</strong> — ' + formatMoneda(s.ofertaGanadoraPrecio) + ', entrega en ' + s.ofertaGanadoraTiempo + ' min';
-      else estadoHtml = '✖️ Cerrada sin ofertas — intenta de nuevo o escríbenos por WhatsApp';
-      return '<div class="panel" style="margin-bottom:12px;"><div class="order-client">' + escapeHtml(s.ubicacion) + ' · ' + s.volumenM3 + ' m³ · ' + escapeHtml(s.tipoDescarga) + '</div><p class="campo-nota" style="margin:6px 0 0;">' + estadoHtml + '</p></div>';
-    }).join('');
-
+  /* ---- Cascarón fijo vs. lista dinámica ----
+     El bug de foco venía de repintar TODO #hubContenido (formulario incluido) en cada
+     refresco disparado por Realtime/temporizador. Ahora el formulario de publicar (cliente)
+     o el panel de cabecera (empresa) se arman UNA sola vez por sesión de rol/empresa —
+     renderHub() no los vuelve a tocar salvo que cambie el rol o la empresa activa — y
+     renderHubLista() es lo único que se repinta seguido, dentro de #hubListaWrap. Para la
+     empresa, las ofertas ("tu precio"/"tiempo de entrega") sí viven dentro de esa lista
+     (necesitan verse actualizadas en vivo); ahí se usa document.activeElement como guardia
+     extra: si la persona está escribiendo justo ahí, ese repintado puntual se salta. */
+  function shellHubCliente(){
     return '<div class="panel form-panel">' +
         '<h2>Publica tu solicitud de agua</h2>' +
         '<p class="campo-nota">Las empresas asociadas verán tu pedido y ofertarán precio y tiempo de entrega durante ' + VENTANA_SUBASTA_MIN + ' minutos — tu teléfono solo se comparte con la empresa que gane.</p>' +
@@ -3838,10 +3838,56 @@
           '<p class="modal-status" id="hubClienteStatus"></p>' +
         '</form>' +
       '</div>' +
-      (propias.length ? '<h3 style="font-size:0.9rem; margin:20px 0 10px;">Tus solicitudes</h3>' + filasPropias : '');
+      '<div id="hubListaWrap"></div>';
+  }
+  function shellHubEmpresa(){
+    var empresa = buscarEmpresa(empresaActivaId);
+    return '<div class="panel"><h2>🏢 ' + escapeHtml(empresa.nombre) + ' — Sala de Subasta</h2>' +
+        '<p class="campo-nota">Ofertas de precio y tiempo de entrega sobre las solicitudes abiertas del Hub Central. La mejor oferta (menor precio, luego menor tiempo) gana al cerrar la ventana de ' + VENTANA_SUBASTA_MIN + ' min.</p>' +
+      '</div>' +
+      '<div id="hubListaWrap"></div>';
+  }
+  // Único listener del <form> de publicar — se conecta solo cuando el cascarón de cliente
+  // se vuelve a montar (cambio de rol), nunca en cada refresco de la lista.
+  function activarFormularioHubCliente(){
+    document.getElementById('hubClienteForm').addEventListener('submit', async function(e){
+      e.preventDefault();
+      if(!supa){ document.getElementById('hubClienteStatus').textContent = 'Sin conexión — intenta más tarde.'; return; }
+      var nueva = {
+        id: 'SOL-' + Date.now().toString(36).toUpperCase(),
+        cliente: document.getElementById('hubCliente').value.trim(),
+        telefono: document.getElementById('hubTelefono').value.trim(),
+        volumenM3: parseFloat(document.getElementById('hubVolumen').value) || 0,
+        ubicacion: document.getElementById('hubUbicacion').value,
+        tipoDescarga: document.getElementById('hubTipoDescarga').value,
+        horaFin: new Date(Date.now() + VENTANA_SUBASTA_MIN * 60000).toISOString(),
+        estado: 'Abierta'
+      };
+      var res = await supa.from('solicitudes_centrales').insert(solicitudARemoto(nueva));
+      var status = document.getElementById('hubClienteStatus');
+      if(res.error){ status.textContent = 'No se pudo publicar: ' + res.error.message; status.className = 'modal-status err'; return; }
+      misSolicitudesIds.push(nueva.id);
+      guardarMisSolicitudes();
+      status.textContent = '¡Publicado! Las empresas ya pueden ofertar.';
+      status.className = 'modal-status ok';
+      refrescarHub();
+    });
   }
 
-  function renderHubEmpresa(){
+  function listaHubCliente(){
+    var propias = solicitudesCentrales.filter(function(s){ return misSolicitudesIds.indexOf(s.id) !== -1; });
+    if(!propias.length) return '';
+    var filasPropias = propias.map(function(s){
+      var estadoHtml;
+      if(s.estado === 'Abierta') estadoHtml = '⏳ En subasta — cierra en <span class="cuenta-regresiva mono" data-fin="' + s.horaFin + '">' + formatCuentaRegresiva(new Date(s.horaFin).getTime() - Date.now()) + '</span>';
+      else if(s.estado === 'Adjudicada') estadoHtml = '✅ Adjudicado a <strong>' + escapeHtml(buscarEmpresa(s.empresaGanadoraId).nombre) + '</strong> — ' + formatMoneda(s.ofertaGanadoraPrecio) + ', entrega en ' + s.ofertaGanadoraTiempo + ' min';
+      else estadoHtml = '✖️ Cerrada sin ofertas — intenta de nuevo o escríbenos por WhatsApp';
+      return '<div class="panel" style="margin-bottom:12px;"><div class="order-client">' + escapeHtml(s.ubicacion) + ' · ' + s.volumenM3 + ' m³ · ' + escapeHtml(s.tipoDescarga) + '</div><p class="campo-nota" style="margin:6px 0 0;">' + estadoHtml + '</p></div>';
+    }).join('');
+    return '<h3 style="font-size:0.9rem; margin:20px 0 10px;">Tus solicitudes</h3>' + filasPropias;
+  }
+
+  function listaHubEmpresa(){
     var empresa = buscarEmpresa(empresaActivaId);
     var abiertas = solicitudesCentrales.filter(function(s){ return s.estado === 'Abierta'; });
     var propias = solicitudesCentrales.filter(function(s){ return s.estado !== 'Abierta' && (s.empresaGanadoraId === empresa.id || ofertasSubasta.some(function(o){ return o.solicitudId === s.id && o.empresaId === empresa.id; })); });
@@ -3875,40 +3921,15 @@
       ('<div class="panel" style="margin-top:16px;"><h2>Comisión de intermediación (Sede Central)</h2>' +
         '<div class="stats-strip">' + tileHtml({ label: 'Retenido en subastas adjudicadas', value: formatMoneda(solicitudesCentrales.filter(function(s){ return s.estado === 'Adjudicada'; }).reduce(function(sum, s){ return sum + (Number(s.comisionSedeCentral) || 0); }, 0)), cls: 'good' }) + '</div></div>') : '';
 
-    return '<div class="panel"><h2>🏢 ' + escapeHtml(empresa.nombre) + ' — Sala de Subasta</h2>' +
-        '<p class="campo-nota">Ofertas de precio y tiempo de entrega sobre las solicitudes abiertas del Hub Central. La mejor oferta (menor precio, luego menor tiempo) gana al cerrar la ventana de ' + VENTANA_SUBASTA_MIN + ' min.</p>' +
-      '</div>' +
-      tarjetasAbiertas +
+    return tarjetasAbiertas +
       '<div class="panel" style="margin-top:16px;"><h2>Historial de subastas de tu empresa</h2>' +
         (filasHistorial ? '<div class="tabla-wrap"><table class="tabla-registro"><thead><tr><th>Ubicación</th><th class="num">Volumen</th><th>Resultado</th><th class="num">Precio</th><th>Teléfono</th></tr></thead><tbody>' + filasHistorial + '</tbody></table></div>' : '<div class="empty-state">Todavía no participaste en ninguna subasta.</div>') +
       '</div>' + comisionSedeCentral;
   }
 
-  function activarListenersHub(){
-    var formCliente = document.getElementById('hubClienteForm');
-    if(formCliente) formCliente.addEventListener('submit', async function(e){
-      e.preventDefault();
-      if(!supa){ document.getElementById('hubClienteStatus').textContent = 'Sin conexión — intenta más tarde.'; return; }
-      var nueva = {
-        id: 'SOL-' + Date.now().toString(36).toUpperCase(),
-        cliente: document.getElementById('hubCliente').value.trim(),
-        telefono: document.getElementById('hubTelefono').value.trim(),
-        volumenM3: parseFloat(document.getElementById('hubVolumen').value) || 0,
-        ubicacion: document.getElementById('hubUbicacion').value,
-        tipoDescarga: document.getElementById('hubTipoDescarga').value,
-        horaFin: new Date(Date.now() + VENTANA_SUBASTA_MIN * 60000).toISOString(),
-        estado: 'Abierta'
-      };
-      var res = await supa.from('solicitudes_centrales').insert(solicitudARemoto(nueva));
-      var status = document.getElementById('hubClienteStatus');
-      if(res.error){ status.textContent = 'No se pudo publicar: ' + res.error.message; status.className = 'modal-status err'; return; }
-      misSolicitudesIds.push(nueva.id);
-      guardarMisSolicitudes();
-      status.textContent = '¡Publicado! Las empresas ya pueden ofertar.';
-      status.className = 'modal-status ok';
-      refrescarHub();
-    });
-
+  // Listeners de la LISTA (ofertar / adjudicar ahora) — se re-conectan cada vez que
+  // #hubListaWrap se repinta, porque innerHTML destruye los nodos y sus listeners viejos.
+  function activarListenersLista(){
     document.querySelectorAll('.oferta-form').forEach(function(form){
       form.addEventListener('submit', async function(e){
         e.preventDefault();
@@ -3932,14 +3953,50 @@
     });
   }
 
+  // true si algún refresco se saltó el repintado de la lista porque había foco activo ahí
+  // (ver renderHubLista) — al soltar el foco (focusout, más abajo) se repinta con lo último.
+  var hubListaPendiente = false;
+
+  function renderHubLista(){
+    var wrap = document.getElementById('hubListaWrap');
+    if(!wrap) return; // el cascarón todavía no se montó (ej. sin conexión a Supabase)
+    if(rolActivo === 'admin'){
+      if(wrap.contains(document.activeElement)){ hubListaPendiente = true; return; }
+      hubListaPendiente = false;
+      wrap.innerHTML = listaHubEmpresa();
+    } else {
+      wrap.innerHTML = listaHubCliente();
+    }
+    activarListenersLista();
+  }
+  // Apenas se suelta el foco dentro del Hub, si quedó un repintado pendiente (ver arriba),
+  // se aplica — con un margen chico para no dispararlo por un simple Tab entre dos campos
+  // del mismo formulario de oferta.
+  document.getElementById('hubContenido').addEventListener('focusout', function(){
+    setTimeout(function(){
+      var wrap = document.getElementById('hubListaWrap');
+      if(hubListaPendiente && wrap && !wrap.contains(document.activeElement)) renderHubLista();
+    }, 150);
+  });
+
+  // Qué cascarón está montado ahora mismo ('cliente' | 'admin:<empresaId>' | null) — solo
+  // se reconstruye el cascarón (y por lo tanto el <form>) si esto cambia; un refresco de
+  // datos normal (Realtime, temporizador) nunca lo toca.
+  var hubShellMontado = null;
   function renderHub(){
     var cont = document.getElementById('hubContenido');
     if(!supa){
       cont.innerHTML = '<div class="panel"><div class="empty-state">El Hub Central necesita conexión a Supabase.</div></div>';
+      hubShellMontado = null;
       return;
     }
-    cont.innerHTML = rolActivo === 'admin' ? renderHubEmpresa() : renderHubCliente();
-    activarListenersHub();
+    var clave = rolActivo === 'admin' ? ('admin:' + empresaActivaId) : 'cliente';
+    if(hubShellMontado !== clave){
+      cont.innerHTML = clave === 'cliente' ? shellHubCliente() : shellHubEmpresa();
+      hubShellMontado = clave;
+      if(clave === 'cliente') activarFormularioHubCliente();
+    }
+    renderHubLista();
     iniciarTimerHub();
     if(!solicitudesCentrales.length && !ofertasSubasta.length) refrescarHub(); // primera carga
   }
