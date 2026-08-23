@@ -1475,9 +1475,9 @@
      ========================================================================== */
   var EMPRESA_ACTIVA_KEY = 'kunturmasha_empresa_activa_v1';
   var EMPRESAS = [
-    { id: 'kunturmasha', nombre: 'Sede Central Kunturmasha', esSedeCentral: true, comisionPeaje: 0.10, choferesDemo: [] },
-    { id: 'pozo-norte', nombre: 'Empresa Pozo Norte', esSedeCentral: false, comisionPeaje: 0.10, choferesDemo: ['Chofer Pozo Norte 1'] },
-    { id: 'pozo-este', nombre: 'Empresa Pozo Este', esSedeCentral: false, comisionPeaje: 0.10, choferesDemo: ['Chofer Pozo Este 1'] }
+    { id: 'kunturmasha', nombre: 'Sede Central Kunturmasha', esSedeCentral: true, comisionPeaje: 0.05, choferesDemo: [] },
+    { id: 'pozo-norte', nombre: 'Empresa Pozo Norte', esSedeCentral: false, comisionPeaje: 0.05, choferesDemo: ['Chofer Pozo Norte 1'] },
+    { id: 'pozo-este', nombre: 'Empresa Pozo Este', esSedeCentral: false, comisionPeaje: 0.05, choferesDemo: ['Chofer Pozo Este 1'] }
   ];
   function buscarEmpresa(id){
     return EMPRESAS.find(function(e){ return e.id === id; }) || EMPRESAS[0];
@@ -4051,8 +4051,9 @@
     }).join('');
 
     var comisionSedeCentral = empresa.esSedeCentral ?
-      ('<div class="panel" style="margin-top:16px;"><h2>Comisión de intermediación (Sede Central)</h2>' +
-        '<div class="stats-strip">' + tileHtml({ label: 'Retenido en subastas adjudicadas', value: formatMoneda(solicitudesCentrales.filter(function(s){ return s.estado === 'Adjudicada'; }).reduce(function(sum, s){ return sum + (Number(s.comisionSedeCentral) || 0); }, 0)), cls: 'good' }) + '</div></div>') : '';
+      ('<div class="panel" style="margin-top:16px;"><h2>Comisión de intermediación — 5% (Sede Central)</h2>' +
+        '<p class="campo-nota" style="margin:0 0 12px;">Se retiene automáticamente el 5% del precio adjudicado en cada subasta ganada, sin importar qué empresa se la lleve.</p>' +
+        '<div class="stats-strip">' + tileHtml({ label: 'Retenido en subastas adjudicadas (5%)', value: formatMoneda(solicitudesCentrales.filter(function(s){ return s.estado === 'Adjudicada'; }).reduce(function(sum, s){ return sum + (Number(s.comisionSedeCentral) || 0); }, 0)), cls: 'good' }) + '</div></div>') : '';
 
     return tarjetasAbiertas +
       '<div class="panel" style="margin-top:16px;"><h2>Historial de subastas de tu empresa</h2>' +
