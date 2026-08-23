@@ -3688,7 +3688,9 @@
       oferta_ganadora_tiempo: s.ofertaGanadoraTiempo || null, comision_sede_central: s.comisionSedeCentral || null,
       pedido_generado_id: s.pedidoGeneradoId || null,
       lat: (s.lat || s.lat === 0) ? s.lat : null, lng: (s.lng || s.lng === 0) ? s.lng : null,
-      manguera_metros: s.mangueraMetros || null, piso: s.piso || null
+      // manguera_metros es integer en la base (ver verificación end-to-end) — nunca se manda
+      // el string del <select> tal cual ("10m", "50m+"): siempre convertido a número puro.
+      manguera_metros: s.mangueraMetros ? parseInt(s.mangueraMetros, 10) : null, piso: s.piso || null
     };
   }
   function solicitudDesdeRemoto(r){
@@ -3783,7 +3785,8 @@
       cliente: solicitud.cliente || ('Cliente Hub ' + solicitud.id), codigoCliente: obtenerCodigoParaCliente(solicitud.cliente || solicitud.id),
       telefono: solicitud.telefono || '', ubicacion: solicitud.ubicacion || '',
       horaInicio: horaInicio, horaFin: sumarMinutosHora(horaInicio, 120), precio: ganadora.precio,
-      chofer: '', ayudante: '', tipoAlmacen: solicitud.tipoDescarga || '', piso: solicitud.piso || '-', dificultad: '', manguera: solicitud.mangueraMetros || '',
+      chofer: '', ayudante: '', tipoAlmacen: solicitud.tipoDescarga || '', piso: solicitud.piso || '-', dificultad: '',
+      manguera: solicitud.mangueraMetros ? (solicitud.mangueraMetros >= 50 ? '50m+' : solicitud.mangueraMetros + 'm') : '',
       notas: 'Adjudicado por el Hub Central (subasta ' + solicitud.id + ', ' + solicitud.volumenM3 + ' m³) — tiempo de entrega ofertado: ' + ganadora.tiempoEntregaMin + ' min.',
       estado: 'Programado', motivoCancelacion: '', tiempos: tiemposVacios(), afiliadorEmail: '', empresaId: empresaGanadora.id
     };
@@ -3874,7 +3877,7 @@
             '<div class="form-group"><label>Tipo de descarga</label><select id="hubTipoDescarga"><option value="Tanque Elevado">Tanque Elevado</option><option value="Cisterna Subterránea / Pozo">Cisterna Subt. / Pozo</option><option value="Bidones / Cilindros">Bidones / Cilindros</option></select></div>' +
           '</div>' +
           '<div class="form-row">' +
-            '<div class="form-group"><label>Metros de manguera necesarios</label><select id="hubManguera"><option value="10m">10 m</option><option value="20m">20 m</option><option value="30m">30 m</option><option value="50m+">50 m o más</option></select></div>' +
+            '<div class="form-group"><label>Metros de manguera necesarios</label><select id="hubManguera"><option value="10">10 m</option><option value="20">20 m</option><option value="30">30 m</option><option value="50">50 m o más</option></select></div>' +
             '<div class="form-group" id="hubGroupPiso" hidden><label>Piso / nivel de altura</label><select id="hubPiso"><option value="1er piso">1er piso</option><option value="2do piso">2do piso</option><option value="3er piso">3er piso</option><option value="4to piso o más">4to piso o más</option></select></div>' +
           '</div>' +
           '<div class="form-group"><label>Distrito</label><select id="hubUbicacion">' + DISTRITOS.map(function(d){ return '<option value="' + escapeHtml(d) + '">' + d + '</option>'; }).join('') + '</select></div>' +
