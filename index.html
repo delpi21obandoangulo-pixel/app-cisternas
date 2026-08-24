@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Kunturmasha</title>
+<title>DigiMark Space</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#000000">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -619,14 +619,14 @@
 <div class="modal-backdrop" id="authOverlay" hidden>
   <div class="modal auth-modal">
     <button class="btn-icon modal-close" id="btnCloseAuthOverlay" type="button">✕</button>
-    <div class="auth-brand"><span class="drop" style="color:var(--channel); -webkit-text-fill-color:var(--channel);">💧</span>Kunturmasha</div>
+    <div class="auth-brand"><span class="drop" style="color:var(--channel); -webkit-text-fill-color:var(--channel);">🌐</span>DigiMark Space</div>
     <p class="auth-sub">Acceso del personal — correo y contraseña</p>
     <div class="auth-error" id="authError" hidden></div>
     <div class="auth-info" id="authInfo" hidden></div>
     <form id="loginPersonalForm">
       <div class="form-group" style="text-align:left;">
         <label>Correo</label>
-        <input type="email" id="loginEmail" placeholder="tucorreo@kunturmasha.pe" required autocomplete="username">
+        <input type="email" id="loginEmail" placeholder="tucorreo@digimarkspace.pe" required autocomplete="username">
       </div>
       <div class="form-group" style="text-align:left;">
         <label>Contraseña</label>
@@ -640,8 +640,8 @@
 <div id="app">
   <header class="topbar">
     <div class="brand">
-      <h1><span class="drop">💧</span>Kunturmasha</h1>
-      <p class="sub">Gestión y Despacho Hídrico · Sede Central, Trujillo, La Libertad · Flota Cisterna 12 m³</p>
+      <h1><span class="drop">🌐</span>DigiMark Space</h1>
+      <p class="sub">Hub Central de Gestión Hídrica · Red de Empresas Asociadas · Trujillo, La Libertad</p>
     </div>
     <div class="topbar-actions">
       <div class="empresa-switch" id="empresaSwitch" hidden>
@@ -831,7 +831,7 @@
         <p class="campo-nota" style="font-size:0.9rem;">🕐 Atención rápida las 24 horas para despachos de cisterna en Trujillo y distritos. Escríbenos o llámanos y te confirmamos tu cotización al toque.</p>
         <div style="display:flex; flex-direction:column; gap:12px; align-items:stretch; max-width:360px; margin:20px auto 0;">
           <a class="btn" style="font-size:0.95rem; padding:14px 20px;"
-             href="https://wa.me/51958132361?text=Hola%20Kunturmasha,%20deseo%20cotizar%20un%20servicio%20de%20agua."
+             href="https://wa.me/51958132361?text=Hola%20DigiMark%20Space,%20deseo%20cotizar%20un%20servicio%20de%20agua."
              target="_blank" rel="noopener">💬 Cotizar por WhatsApp</a>
           <a class="btn-ghost" style="font-size:0.95rem; padding:12px 20px;" href="tel:958132361">📞 Llamar ahora</a>
         </div>
@@ -1350,10 +1350,11 @@
   var SESION_PERSONAL_KEY = 'kunturmasha_sesion_personal_v1';
   var PERFIL_NOMBRES_KEY = 'kunturmasha_perfil_nombres_v1'; // { email: nombre editado desde "Mi Perfil" }, ver nombreMostrado()
 
-  // 11 cuentas fijas del personal. La contraseña vive en texto plano aquí porque el login
-  // se valida enteramente en el navegador (sin backend de autenticación) — es un candado
-  // de interfaz para un equipo pequeño y conocido, no una defensa contra quien lea el
-  // código fuente de la página. "nombre" es también el valor exacto que debe llevar el
+  // Cuentas fijas del personal, de DigiMark Space (la sede/hub que administra la red) y de
+  // cada una de las 5 empresas asociadas. La contraseña vive en texto plano aquí porque el
+  // login se valida enteramente en el navegador (sin backend de autenticación) — es un
+  // candado de interfaz para un equipo pequeño y conocido, no una defensa contra quien lea
+  // el código fuente de la página. "nombre" es también el valor exacto que debe llevar el
   // campo "Chofer" del formulario de Despacho para que la comisión de Mi Perfil lo
   // reconozca (ver <select id="chofer"> y calcularComisionesChofer()) — por eso NUNCA
   // cambia en tiempo real, ni siquiera cuando la persona edita su nombre visible desde
@@ -1363,18 +1364,33 @@
   // "personaId": a qué persona real pertenece esta cuenta (ver PERSONAS más abajo) — Piero,
   // Frank y Shimo tienen dos cuentas cada uno (Admin y Chofer) pero son UNA sola persona para
   // efectos de "Conseguido por / Afiliador" y su comisión de promotor.
+  // "empresaId": a qué empresa (ver EMPRESAS más abajo) pertenece esta cuenta — es la base del
+  // aislamiento entre empresas asociadas (ver actualizarSelectorEmpresa()): una cuenta con
+  // empresaId fijo solo puede operar esa empresa, nunca cambiar al espacio de otra.
+  // "accesoGlobal": solo el equipo de DigiMark Space lo tiene — puede cambiar libremente entre
+  // TODAS las empresas de la red (soporte/administración de la plataforma), igual que antes
+  // podía cualquier Administrador cuando Kunturmasha era la Sede Central.
   var CREDENCIALES_PERSONAL = [
-    { email: 'admin1@kunturmasha.pe', password: 'admin2026', rol: 'Administrador', nombre: 'Piero (Admin)', parejaEmail: 'chofer1@kunturmasha.pe', personaId: 'piero' },
-    { email: 'admin2@kunturmasha.pe', password: 'admin2026', rol: 'Administrador', nombre: 'Frank (Admin)', personaId: 'frank' },
-    { email: 'admin3@kunturmasha.pe', password: 'admin2026', rol: 'Administrador', nombre: 'Shimo (Admin)', personaId: 'shimo' },
-    { email: 'chofer1@kunturmasha.pe', password: 'chofer2026', rol: 'Chofer', nombre: 'Piero (Chofer)', parejaEmail: 'admin1@kunturmasha.pe', personaId: 'piero' },
-    { email: 'chofer2@kunturmasha.pe', password: 'chofer2026', rol: 'Chofer', nombre: 'Frank (Chofer)', personaId: 'frank' },
-    { email: 'chofer3@kunturmasha.pe', password: 'chofer2026', rol: 'Chofer', nombre: 'Shimo (Chofer)', personaId: 'shimo' },
-    { email: 'afiliador1@kunturmasha.pe', password: 'afiliador2026', rol: 'Afiliador', nombre: 'Ronald (Afiliador)', personaId: 'ronald' },
-    { email: 'afiliador2@kunturmasha.pe', password: 'afiliador2026', rol: 'Afiliador', nombre: 'Jherson (Afiliador)', personaId: 'jherson' },
-    { email: 'afiliador3@kunturmasha.pe', password: 'afiliador2026', rol: 'Afiliador', nombre: 'Afiliador 3', personaId: 'afiliador3' },
-    { email: 'afiliador4@kunturmasha.pe', password: 'afiliador2026', rol: 'Afiliador', nombre: 'Afiliador 4', personaId: 'afiliador4' },
-    { email: 'afiliador5@kunturmasha.pe', password: 'afiliador2026', rol: 'Afiliador', nombre: 'Afiliador 5', personaId: 'afiliador5' }
+    { email: 'admin@digimarkspace.pe', password: 'digimark2026', rol: 'Administrador', nombre: 'Equipo DigiMark Space (Admin)', personaId: 'digimark-admin', empresaId: 'digimark-space', accesoGlobal: true },
+    { email: 'admin1@kunturmasha.pe', password: 'admin2026', rol: 'Administrador', nombre: 'Piero (Admin)', parejaEmail: 'chofer1@kunturmasha.pe', personaId: 'piero', empresaId: 'kunturmasha' },
+    { email: 'admin2@kunturmasha.pe', password: 'admin2026', rol: 'Administrador', nombre: 'Frank (Admin)', personaId: 'frank', empresaId: 'kunturmasha' },
+    { email: 'admin3@kunturmasha.pe', password: 'admin2026', rol: 'Administrador', nombre: 'Shimo (Admin)', personaId: 'shimo', empresaId: 'kunturmasha' },
+    { email: 'chofer1@kunturmasha.pe', password: 'chofer2026', rol: 'Chofer', nombre: 'Piero (Chofer)', parejaEmail: 'admin1@kunturmasha.pe', personaId: 'piero', empresaId: 'kunturmasha' },
+    { email: 'chofer2@kunturmasha.pe', password: 'chofer2026', rol: 'Chofer', nombre: 'Frank (Chofer)', personaId: 'frank', empresaId: 'kunturmasha' },
+    { email: 'chofer3@kunturmasha.pe', password: 'chofer2026', rol: 'Chofer', nombre: 'Shimo (Chofer)', personaId: 'shimo', empresaId: 'kunturmasha' },
+    { email: 'afiliador1@kunturmasha.pe', password: 'afiliador2026', rol: 'Afiliador', nombre: 'Ronald (Afiliador)', personaId: 'ronald', empresaId: 'kunturmasha' },
+    { email: 'afiliador2@kunturmasha.pe', password: 'afiliador2026', rol: 'Afiliador', nombre: 'Jherson (Afiliador)', personaId: 'jherson', empresaId: 'kunturmasha' },
+    { email: 'afiliador3@kunturmasha.pe', password: 'afiliador2026', rol: 'Afiliador', nombre: 'Afiliador 3', personaId: 'afiliador3', empresaId: 'kunturmasha' },
+    { email: 'afiliador4@kunturmasha.pe', password: 'afiliador2026', rol: 'Afiliador', nombre: 'Afiliador 4', personaId: 'afiliador4', empresaId: 'kunturmasha' },
+    { email: 'afiliador5@kunturmasha.pe', password: 'afiliador2026', rol: 'Afiliador', nombre: 'Afiliador 5', personaId: 'afiliador5', empresaId: 'kunturmasha' },
+    { email: 'admin@aquatrujillo.pe', password: 'admin2026', rol: 'Administrador', nombre: 'Admin AquaTrujillo', personaId: 'admin-aquatrujillo', empresaId: 'aqua-trujillo' },
+    { email: 'chofer@aquatrujillo.pe', password: 'chofer2026', rol: 'Chofer', nombre: 'Chofer AquaTrujillo 1', personaId: 'chofer-aquatrujillo-1', empresaId: 'aqua-trujillo' },
+    { email: 'admin@gotadorada.pe', password: 'admin2026', rol: 'Administrador', nombre: 'Admin Gota Dorada', personaId: 'admin-gotadorada', empresaId: 'gota-dorada' },
+    { email: 'chofer@gotadorada.pe', password: 'chofer2026', rol: 'Chofer', nombre: 'Chofer Gota Dorada 1', personaId: 'chofer-gotadorada-1', empresaId: 'gota-dorada' },
+    { email: 'admin@cisternaselvalle.pe', password: 'admin2026', rol: 'Administrador', nombre: 'Admin Cisternas El Valle', personaId: 'admin-cisternaselvalle', empresaId: 'cisternas-el-valle' },
+    { email: 'chofer@cisternaselvalle.pe', password: 'chofer2026', rol: 'Chofer', nombre: 'Chofer Cisternas El Valle 1', personaId: 'chofer-cisternaselvalle-1', empresaId: 'cisternas-el-valle' },
+    { email: 'admin@manantialsur.pe', password: 'admin2026', rol: 'Administrador', nombre: 'Admin Manantial Sur', personaId: 'admin-manantialsur', empresaId: 'manantial-sur' },
+    { email: 'chofer@manantialsur.pe', password: 'chofer2026', rol: 'Chofer', nombre: 'Chofer Manantial Sur 1', personaId: 'chofer-manantialsur-1', empresaId: 'manantial-sur' }
   ];
   function buscarCredencial(email){
     var norm = String(email || '').trim().toLowerCase();
@@ -1394,6 +1410,7 @@
      (un correo de afiliador puntual) para no perder los pedidos ya registrados.
      ========================================================================== */
   var PERSONAS = [
+    { id: 'digimark-admin', nombre: 'Equipo DigiMark Space (Admin)', emails: ['admin@digimarkspace.pe'] },
     { id: 'piero', nombre: 'Piero (Admin / Chofer)', emails: ['admin1@kunturmasha.pe', 'chofer1@kunturmasha.pe'] },
     { id: 'frank', nombre: 'Frank (Admin / Chofer)', emails: ['admin2@kunturmasha.pe', 'chofer2@kunturmasha.pe'] },
     { id: 'shimo', nombre: 'Shimo (Admin / Chofer)', emails: ['admin3@kunturmasha.pe', 'chofer3@kunturmasha.pe'] },
@@ -1401,7 +1418,15 @@
     { id: 'jherson', nombre: 'Jherson (Afiliador)', emails: ['afiliador2@kunturmasha.pe'] },
     { id: 'afiliador3', nombre: 'Afiliador 3', emails: ['afiliador3@kunturmasha.pe'] },
     { id: 'afiliador4', nombre: 'Afiliador 4', emails: ['afiliador4@kunturmasha.pe'] },
-    { id: 'afiliador5', nombre: 'Afiliador 5', emails: ['afiliador5@kunturmasha.pe'] }
+    { id: 'afiliador5', nombre: 'Afiliador 5', emails: ['afiliador5@kunturmasha.pe'] },
+    { id: 'admin-aquatrujillo', nombre: 'Admin AquaTrujillo', emails: ['admin@aquatrujillo.pe'] },
+    { id: 'chofer-aquatrujillo-1', nombre: 'Chofer AquaTrujillo 1', emails: ['chofer@aquatrujillo.pe'] },
+    { id: 'admin-gotadorada', nombre: 'Admin Gota Dorada', emails: ['admin@gotadorada.pe'] },
+    { id: 'chofer-gotadorada-1', nombre: 'Chofer Gota Dorada 1', emails: ['chofer@gotadorada.pe'] },
+    { id: 'admin-cisternaselvalle', nombre: 'Admin Cisternas El Valle', emails: ['admin@cisternaselvalle.pe'] },
+    { id: 'chofer-cisternaselvalle-1', nombre: 'Chofer Cisternas El Valle 1', emails: ['chofer@cisternaselvalle.pe'] },
+    { id: 'admin-manantialsur', nombre: 'Admin Manantial Sur', emails: ['admin@manantialsur.pe'] },
+    { id: 'chofer-manantialsur-1', nombre: 'Chofer Manantial Sur 1', emails: ['chofer@manantialsur.pe'] }
   ];
   function personaDeCredencial(cred){
     if(!cred) return null;
@@ -1483,22 +1508,30 @@
   }
 
   /* ==========================================================================
-     Marketplace multiempresa (rama "demo"). Cada empresa/pozo asociado tiene su propio
-     "sub-espacio": su propia agenda (ver ordenarDelDia()/renderStats()), su propia
-     Contabilidad (ver pedidosDelPeriodo()/gastosDelPeriodo()) y su propia flota de
-     choferes (ver poblarSelectChofer()) — todo filtrado por empresaActivaId, sin duplicar
-     el código de esas vistas. El switch de empresa (topbar, solo Administrador) simula
-     entrar al espacio de cada proveedor; "kunturmasha" es la Sede Central que opera el Hub
-     Central/subasta y sus reglas están marcadas con esSedeCentral.
-     Kunturmasha es la única con choferes/afiliadores reales (CREDENCIALES_PERSONAL); las
-     otras dos parten vacías con un par de nombres de chofer de ejemplo, listas para que la
-     demo muestre pedidos propios en cuanto ganen una subasta.
+     Marketplace multiempresa (rama "demo"). "DigiMark Space" es la marca paraguas / Sede
+     Central que administra toda la red: opera el Hub Central/subasta, adjudica solicitudes
+     y retiene su comisión de intermediación (esSedeCentral). Cada una de las 5 empresas
+     asociadas (Kunturmasha incluida — ya NO es la marca principal, es una empresa asociada
+     más) tiene su propio "sub-espacio": su propia agenda (ver ordenarDelDia()/renderStats()),
+     su propia Contabilidad (ver pedidosDelPeriodo()/gastosDelPeriodo()) y su propia flota de
+     choferes (ver poblarSelectChofer()) — todo filtrado por empresaActivaId, sin duplicar el
+     código de esas vistas. El switch de empresa (topbar, solo Administrador) simula entrar al
+     espacio de cada empresa; solo las cuentas con accesoGlobal (equipo DigiMark Space) pueden
+     moverse libremente entre todas — cualquier otra cuenta queda fija en la suya (aislamiento
+     estricto, ver actualizarSelectorEmpresa()).
+     Kunturmasha y las 4 empresas nuevas (AquaTrujillo, Gota Dorada, Cisternas El Valle,
+     Manantial Sur) tienen choferes/administradores reales (CREDENCIALES_PERSONAL);
+     "choferesDemo" solo es un respaldo por si alguna empresa todavía no tiene chofer dado
+     de alta con cuenta propia (ver poblarSelectChofer()).
      ========================================================================== */
   var EMPRESA_ACTIVA_KEY = 'kunturmasha_empresa_activa_v1';
   var EMPRESAS = [
-    { id: 'kunturmasha', nombre: 'Sede Central Kunturmasha', esSedeCentral: true, comisionPeaje: 0.05, choferesDemo: [] },
-    { id: 'pozo-norte', nombre: 'Empresa Pozo Norte', esSedeCentral: false, comisionPeaje: 0.05, choferesDemo: ['Chofer Pozo Norte 1'] },
-    { id: 'pozo-este', nombre: 'Empresa Pozo Este', esSedeCentral: false, comisionPeaje: 0.05, choferesDemo: ['Chofer Pozo Este 1'] }
+    { id: 'digimark-space', nombre: 'DigiMark Space', esSedeCentral: true, comisionPeaje: 0.05, choferesDemo: [] },
+    { id: 'kunturmasha', nombre: 'Kunturmasha', esSedeCentral: false, comisionPeaje: 0.05, choferesDemo: [] },
+    { id: 'aqua-trujillo', nombre: 'AquaTrujillo', esSedeCentral: false, comisionPeaje: 0.05, choferesDemo: ['Chofer AquaTrujillo 1'] },
+    { id: 'gota-dorada', nombre: 'Gota Dorada', esSedeCentral: false, comisionPeaje: 0.05, choferesDemo: ['Chofer Gota Dorada 1'] },
+    { id: 'cisternas-el-valle', nombre: 'Cisternas El Valle', esSedeCentral: false, comisionPeaje: 0.05, choferesDemo: ['Chofer Cisternas El Valle 1'] },
+    { id: 'manantial-sur', nombre: 'Manantial Sur', esSedeCentral: false, comisionPeaje: 0.05, choferesDemo: ['Chofer Manantial Sur 1'] }
   ];
   function buscarEmpresa(id){
     return EMPRESAS.find(function(e){ return e.id === id; }) || EMPRESAS[0];
@@ -1778,15 +1811,15 @@
     filterGroup: document.getElementById('filterGroup')
   };
 
-  // "Chofer" se llena según la flota de la empresa activa: Kunturmasha usa sus choferes
-  // reales (CREDENCIALES_PERSONAL) para que calce con el cálculo de comisiones; las demás
-  // empresas del marketplace (Pozo Norte/Este) usan su roster de ejemplo (EMPRESAS[].choferesDemo)
-  // — se repuebla cada vez que cambia la empresa activa, ver cambiarEmpresaActiva().
+  // "Chofer" se llena según la flota de la empresa activa: cualquier empresa con choferes
+  // reales dados de alta (CREDENCIALES_PERSONAL, filtrado por empresaId) usa esa lista para
+  // que calce con el cálculo de comisiones; si todavía no tiene ninguno, cae al roster de
+  // ejemplo (EMPRESAS[].choferesDemo) — se repuebla cada vez que cambia la empresa activa,
+  // ver cambiarEmpresaActiva().
   function poblarSelectChofer(){
     var empresa = buscarEmpresa(empresaActivaId);
-    var nombres = empresa.id === 'kunturmasha' ?
-      CREDENCIALES_PERSONAL.filter(function(c){ return c.rol === 'Chofer'; }).map(function(c){ return c.nombre; }) :
-      empresa.choferesDemo;
+    var reales = CREDENCIALES_PERSONAL.filter(function(c){ return c.rol === 'Chofer' && c.empresaId === empresa.id; }).map(function(c){ return c.nombre; });
+    var nombres = reales.length ? reales : empresa.choferesDemo;
     els.chofer.innerHTML = '<option value="">— Sin asignar —</option>' +
       nombres.map(function(n){ return '<option value="' + escapeHtml(n) + '">' + escapeHtml(n) + '</option>'; }).join('');
   }
@@ -1799,8 +1832,6 @@
     PERSONAS.map(function(pe){ return '<option value="' + escapeHtml(pe.id) + '">' + escapeHtml(pe.nombre) + '</option>'; }).join('');
 
   var empresaSelectorEl = document.getElementById('empresaSelector');
-  empresaSelectorEl.innerHTML = EMPRESAS.map(function(e){ return '<option value="' + escapeHtml(e.id) + '">' + escapeHtml(e.nombre) + '</option>'; }).join('');
-  empresaSelectorEl.value = empresaActivaId;
   // Cambiar de empresa activa reordena qué ve el Administrador: su propia Agenda,
   // Contabilidad, flota de choferes (poblarSelectChofer) y la Sala de Subasta del Hub
   // Central si está abierta — todo deriva de empresaActivaId, no se duplica código de vista.
@@ -1812,6 +1843,23 @@
     renderTodo();
     if(vistaActual === 'contabilidad') renderContabilidad();
   }
+  // Aislamiento estricto entre empresas asociadas: una cuenta de Administrador cuya
+  // credencial trae empresaId fijo solo puede ver/operar SU empresa — el <select> queda con
+  // una única opción y deshabilitado, así nunca puede apuntar empresaActivaId (y por lo tanto
+  // los filtros de pedidos/gastos/choferes/Hub Central) a los datos de otra empresa. Solo las
+  // cuentas con accesoGlobal (equipo DigiMark Space) ven y pueden elegir entre las 6 opciones
+  // (la Sede Central y las 5 empresas asociadas). Se llama al iniciar la app y cada vez que
+  // cambia la sesión de personal (entrarComoPersonal/cerrarSesionPersonal).
+  function actualizarSelectorEmpresa(){
+    var cred = usuarioActual ? buscarCredencial(usuarioActual.email) : null;
+    var restringidaA = (cred && cred.empresaId && !cred.accesoGlobal) ? cred.empresaId : null;
+    var lista = restringidaA ? EMPRESAS.filter(function(e){ return e.id === restringidaA; }) : EMPRESAS;
+    empresaSelectorEl.innerHTML = lista.map(function(e){ return '<option value="' + escapeHtml(e.id) + '">' + escapeHtml(e.nombre) + '</option>'; }).join('');
+    empresaSelectorEl.disabled = !!restringidaA;
+    if(restringidaA && empresaActivaId !== restringidaA) cambiarEmpresaActiva(restringidaA);
+    else empresaSelectorEl.value = empresaActivaId;
+  }
+  actualizarSelectorEmpresa();
   empresaSelectorEl.addEventListener('change', function(){ cambiarEmpresaActiva(this.value); });
 
   // Vista previa en vivo de la hora en formato 12h AM/PM junto a cada <input type="time">,
@@ -4261,6 +4309,7 @@
     rolDbActual = cred.rol;
     var interno = MAPA_ROL_DB_A_INTERNO[rolDbActual] || 'cliente';
     actualizarSesionUI();
+    actualizarSelectorEmpresa();
     aplicarRol(interno);
     irAVista(VISTAS_POR_ROL[interno].defaultView);
     // Ver la misma lógica en cancelarEdicion(): si quien entra es un afiliador, su propia
@@ -4276,6 +4325,7 @@
     rolDbActual = null;
     borrarSesionPersonalGuardada();
     actualizarSesionUI();
+    actualizarSelectorEmpresa();
     aplicarRol('cliente');
     irAVista(VISTAS_POR_ROL.cliente.defaultView);
   }
