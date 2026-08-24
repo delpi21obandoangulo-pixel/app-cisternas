@@ -309,6 +309,8 @@
   .rol-pill.rol-chofer{background:var(--warn-bg); color:var(--warn); border-color:color-mix(in srgb, var(--warn) 40%, transparent);}
   .rol-pill.rol-afiliador{background:color-mix(in srgb, var(--clay) 18%, transparent); color:var(--clay); border-color:color-mix(in srgb, var(--clay) 40%, transparent);}
   .rol-pill.rol-cliente{background:var(--good-bg); color:var(--good); border-color:color-mix(in srgb, var(--good) 40%, transparent);}
+  .rol-pill.rol-ayudante{background:color-mix(in srgb, var(--bad) 16%, transparent); color:var(--bad); border-color:color-mix(in srgb, var(--bad) 40%, transparent);}
+  #rolSwitcher{background:var(--panel); color:var(--ink); border:1px solid var(--border); border-radius:8px; font-size:0.72rem; padding:4px 6px;}
   .btn-logout{
     background:var(--surface-2); color:var(--ink); border:1px solid var(--border-strong); border-radius:100px;
     padding:7px 14px; font-size:0.76rem; font-weight:600; cursor:pointer; transition:all .2s var(--ease);
@@ -651,6 +653,7 @@
       <div class="session-chip" id="sessionChip" hidden>
         <span class="session-email" id="sessionEmail"></span>
         <span class="rol-pill" id="sessionRolPill"></span>
+        <select id="rolSwitcher" hidden title="Cambiar de rol sin cerrar sesión"></select>
         <button class="btn-ghost" id="btnCambiarModo" type="button" hidden></button>
         <button class="btn-logout" id="btnLogout" type="button">Cerrar sesión</button>
       </div>
@@ -667,6 +670,7 @@
     <button class="view-tab" data-view="cotizar">💧 Cotizar</button>
     <button class="view-tab" data-view="hub">🌐 Hub Central</button>
     <button class="view-tab" data-view="agendar">🚚 Despacho</button>
+    <button class="view-tab" data-view="ayudante">🧰 Ayudante</button>
     <button class="view-tab" data-view="contabilidad">📊 Contabilidad</button>
     <button class="view-tab" data-view="perfil">💼 Mi Perfil</button>
     <button class="view-tab" data-view="ajustes">⚙️ Ajustes</button>
@@ -696,6 +700,12 @@
         <span class="home-icon">🚚</span>
         <h2>Despacho</h2>
         <p>Registra un pedido nuevo: cliente, ubicación, precio, chofer y ayudante asignados, y los detalles del despacho.</p>
+        <span class="home-cta">Entrar →</span>
+      </button>
+      <button class="home-card" data-goto="ayudante">
+        <span class="home-icon">🧰</span>
+        <h2>Ayudante</h2>
+        <p>Checklist de descarga de los viajes de hoy: conexión de manguera, descarga completada y reporte de incidencias en obra.</p>
         <span class="home-cta">Entrar →</span>
       </button>
       <button class="home-card" data-goto="contabilidad">
@@ -998,6 +1008,23 @@
     </div>
   </main>
   <div class="panel" id="afiliadosLista" hidden></div>
+  </section>
+
+  <!--
+    Vista del rol "Ayudante" (nuevo, ver renderAyudante()): checklist operativo de los
+    viajes del día de la empresa activa — conexión de manguera, descarga completada y
+    reporte de incidencias en obra. El checklist es solo de este navegador (no hay columna
+    en Supabase para eso todavía); la incidencia sí se guarda en el pedido (campo "notas",
+    vía guardarPedidos()) para que quede visible también en Ver agenda/Despacho.
+  -->
+  <section id="vistaAyudante" hidden>
+    <main class="layout-solo">
+      <div class="panel">
+        <h2>🧰 Checklist de descarga — hoy</h2>
+        <p class="campo-nota">Viajes en curso de tu empresa para hoy. Marca cada paso al completarlo y reporta cualquier incidencia en obra.</p>
+      </div>
+      <div id="ayudanteLista"></div>
+    </main>
   </section>
 
   <section id="vistaContabilidad" hidden>
@@ -1370,7 +1397,14 @@
   // "accesoGlobal": solo el equipo de DigiMark Space lo tiene — puede cambiar libremente entre
   // TODAS las empresas de la red (soporte/administración de la plataforma), igual que antes
   // podía cualquier Administrador cuando Kunturmasha era la Sede Central.
+  // "roles": multi-rol dinámico (ver rolesDeCredencial()/cambiarRolActivo()) — con qué roles
+  // internos puede operar esta cuenta SIN cerrar sesión y volver a loguearse, elegido desde
+  // el selector rápido de rol de la cabecera. Si falta, la cuenta tiene un único rol fijo
+  // (cred.rol), como siempre.
+  // "superAdmin": Piero, cuenta maestra — accesoGlobal + los 4 roles de personal a la vez
+  // (Administrador/Chofer/Ayudante/Afiliador), pensada para pruebas y soporte de toda la red.
   var CREDENCIALES_PERSONAL = [
+    { email: 'piero@digimarkspace.pe', password: 'piero2026', rol: 'Administrador', roles: ['admin', 'chofer', 'ayudante', 'afiliador'], nombre: 'Piero (SuperAdmin)', personaId: 'piero', empresaId: 'digimark-space', accesoGlobal: true, superAdmin: true },
     { email: 'admin@digimarkspace.pe', password: 'digimark2026', rol: 'Administrador', nombre: 'Equipo DigiMark Space (Admin)', personaId: 'digimark-admin', empresaId: 'digimark-space', accesoGlobal: true },
     { email: 'admin1@kunturmasha.pe', password: 'admin2026', rol: 'Administrador', nombre: 'Piero (Admin)', parejaEmail: 'chofer1@kunturmasha.pe', personaId: 'piero', empresaId: 'kunturmasha' },
     { email: 'admin2@kunturmasha.pe', password: 'admin2026', rol: 'Administrador', nombre: 'Frank (Admin)', personaId: 'frank', empresaId: 'kunturmasha' },
@@ -1411,7 +1445,7 @@
      ========================================================================== */
   var PERSONAS = [
     { id: 'digimark-admin', nombre: 'Equipo DigiMark Space (Admin)', emails: ['admin@digimarkspace.pe'] },
-    { id: 'piero', nombre: 'Piero (Admin / Chofer)', emails: ['admin1@kunturmasha.pe', 'chofer1@kunturmasha.pe'] },
+    { id: 'piero', nombre: 'Piero (Admin / Chofer / SuperAdmin)', emails: ['admin1@kunturmasha.pe', 'chofer1@kunturmasha.pe', 'piero@digimarkspace.pe'] },
     { id: 'frank', nombre: 'Frank (Admin / Chofer)', emails: ['admin2@kunturmasha.pe', 'chofer2@kunturmasha.pe'] },
     { id: 'shimo', nombre: 'Shimo (Admin / Chofer)', emails: ['admin3@kunturmasha.pe', 'chofer3@kunturmasha.pe'] },
     { id: 'ronald', nombre: 'Ronald (Afiliador)', emails: ['afiliador1@kunturmasha.pe'] },
@@ -1493,10 +1527,14 @@
   }
 
   var VISTAS_POR_ROL = {
-    admin: { tabs: ['home', 'agenda', 'cotizar', 'hub', 'agendar', 'contabilidad', 'perfil', 'ajustes'], defaultView: 'home' },
+    admin: { tabs: ['home', 'agenda', 'cotizar', 'hub', 'agendar', 'ayudante', 'contabilidad', 'perfil', 'ajustes'], defaultView: 'home' },
     cliente: { tabs: ['home', 'agenda', 'cotizar', 'hub'], defaultView: 'agenda' },
     chofer: { tabs: ['home', 'agenda', 'perfil'], defaultView: 'agenda' },
-    afiliador: { tabs: ['home', 'agendar', 'perfil'], defaultView: 'agendar' }
+    afiliador: { tabs: ['home', 'agendar', 'perfil'], defaultView: 'agendar' },
+    // Nuevo rol operativo: checklist de descarga (conexión de manguera, descarga completada,
+    // reporte de incidencias) — ver renderAyudante(). También ve Mi Perfil (sin comisión propia
+    // salvo que además tenga un personaId como promotor).
+    ayudante: { tabs: ['home', 'ayudante', 'perfil'], defaultView: 'ayudante' }
   };
 
   // Rol activo por defecto: 'cliente' — la app arranca directo en modo cliente (sin
@@ -1525,13 +1563,18 @@
      de alta con cuenta propia (ver poblarSelectChofer()).
      ========================================================================== */
   var EMPRESA_ACTIVA_KEY = 'kunturmasha_empresa_activa_v1';
+  // Único punto de verdad para la tasa de comisión estándar (5%) — antes vivía repetida como
+  // 0.05 en cada empresa Y en calcularComisionesChofer()/calcularComisionesPromotor(), lo que
+  // permitía que un cambio de tasa quedara desincronizado entre la comisión de Sede Central y
+  // la de choferes/promotores. Ahora las tres se calculan desde esta misma constante.
+  var COMISION_ESTANDAR = 0.05;
   var EMPRESAS = [
-    { id: 'digimark-space', nombre: 'DigiMark Space', esSedeCentral: true, comisionPeaje: 0.05, choferesDemo: [] },
-    { id: 'kunturmasha', nombre: 'Kunturmasha', esSedeCentral: false, comisionPeaje: 0.05, choferesDemo: [] },
-    { id: 'aqua-trujillo', nombre: 'AquaTrujillo', esSedeCentral: false, comisionPeaje: 0.05, choferesDemo: ['Chofer AquaTrujillo 1'] },
-    { id: 'gota-dorada', nombre: 'Gota Dorada', esSedeCentral: false, comisionPeaje: 0.05, choferesDemo: ['Chofer Gota Dorada 1'] },
-    { id: 'cisternas-el-valle', nombre: 'Cisternas El Valle', esSedeCentral: false, comisionPeaje: 0.05, choferesDemo: ['Chofer Cisternas El Valle 1'] },
-    { id: 'manantial-sur', nombre: 'Manantial Sur', esSedeCentral: false, comisionPeaje: 0.05, choferesDemo: ['Chofer Manantial Sur 1'] }
+    { id: 'digimark-space', nombre: 'DigiMark Space', esSedeCentral: true, comisionPeaje: COMISION_ESTANDAR, choferesDemo: [] },
+    { id: 'kunturmasha', nombre: 'Kunturmasha', esSedeCentral: false, comisionPeaje: COMISION_ESTANDAR, choferesDemo: [] },
+    { id: 'aqua-trujillo', nombre: 'AquaTrujillo', esSedeCentral: false, comisionPeaje: COMISION_ESTANDAR, choferesDemo: ['Chofer AquaTrujillo 1'] },
+    { id: 'gota-dorada', nombre: 'Gota Dorada', esSedeCentral: false, comisionPeaje: COMISION_ESTANDAR, choferesDemo: ['Chofer Gota Dorada 1'] },
+    { id: 'cisternas-el-valle', nombre: 'Cisternas El Valle', esSedeCentral: false, comisionPeaje: COMISION_ESTANDAR, choferesDemo: ['Chofer Cisternas El Valle 1'] },
+    { id: 'manantial-sur', nombre: 'Manantial Sur', esSedeCentral: false, comisionPeaje: COMISION_ESTANDAR, choferesDemo: ['Chofer Manantial Sur 1'] }
   ];
   function buscarEmpresa(id){
     return EMPRESAS.find(function(e){ return e.id === id; }) || EMPRESAS[0];
@@ -1839,9 +1882,20 @@
     if(!EMPRESAS.some(function(e){ return e.id === id; })) return;
     empresaActivaId = id;
     try{ localStorage.setItem(EMPRESA_ACTIVA_KEY, id); }catch(e){}
+    // Corrige un desajuste real: la búsqueda/filtro de estado de "Ver agenda" quedaban con el
+    // texto/estado de la empresa anterior, y al entrar a la nueva empresa la lista podía verse
+    // vacía o filtrada "a medias" sin que se notara por qué. Se resetean a los valores por
+    // defecto cada vez que se cambia de empresa activa.
+    busqueda = '';
+    if(els.buscador) els.buscador.value = '';
+    filtroEstado = 'Todos';
+    if(els.filterGroup){
+      els.filterGroup.querySelectorAll('.filter-btn').forEach(function(b){ b.classList.toggle('active', b.dataset.estado === 'Todos'); });
+    }
     poblarSelectChofer();
     renderTodo();
     if(vistaActual === 'contabilidad') renderContabilidad();
+    if(vistaActual === 'ayudante') renderAyudante();
   }
   // Aislamiento estricto entre empresas asociadas: una cuenta de Administrador cuya
   // credencial trae empresaId fijo solo puede ver/operar SU empresa — el <select> queda con
@@ -2787,18 +2841,25 @@
 
   /* ---------- Vistas: Inicio / Agenda / Cotizar / Agendar / Contabilidad / Mi Perfil / Ajustes ---------- */
   var vistaActual = 'home';
-  var VISTAS = ['home', 'agenda', 'cotizar', 'hub', 'agendar', 'contabilidad', 'perfil', 'ajustes'];
-  var ID_VISTA = { home: 'vistaHome', agenda: 'vistaAgenda', cotizar: 'vistaCotizar', hub: 'vistaHub', agendar: 'vistaAgendar', contabilidad: 'vistaContabilidad', perfil: 'vistaPerfil', ajustes: 'vistaAjustes' };
+  var VISTAS = ['home', 'agenda', 'cotizar', 'hub', 'agendar', 'ayudante', 'contabilidad', 'perfil', 'ajustes'];
+  var ID_VISTA = { home: 'vistaHome', agenda: 'vistaAgenda', cotizar: 'vistaCotizar', hub: 'vistaHub', agendar: 'vistaAgendar', ayudante: 'vistaAyudante', contabilidad: 'vistaContabilidad', perfil: 'vistaPerfil', ajustes: 'vistaAjustes' };
 
   function irAVista(nombre){
     if(VISTAS.indexOf(nombre) === -1) nombre = 'home';
+    var vistaAnterior = vistaActual;
     vistaActual = nombre;
     document.querySelectorAll('.view-tab').forEach(function(b){ b.classList.toggle('active', b.dataset.view === nombre); });
     VISTAS.forEach(function(v){ document.getElementById(ID_VISTA[v]).hidden = v !== nombre; });
+    // Rendimiento: el mapa de Leaflet (iniciarMapaHub()) solo tiene sentido vivo mientras se
+    // ve el Hub Central — al salir de esa pestaña se destruye (Leaflet .remove(), listeners
+    // incluidos) en vez de dejarlo corriendo oculto en el DOM; la próxima vez que se entre al
+    // Hub Central, renderHub() reconstruye el cascarón desde cero y lo vuelve a inicializar.
+    if(vistaAnterior === 'hub' && nombre !== 'hub') destruirMapaHub();
     if(nombre === 'contabilidad') renderContabilidad();
     if(nombre === 'agenda') renderTodo();
     if(nombre === 'perfil') renderPerfil();
     if(nombre === 'ajustes') renderAjustes();
+    if(nombre === 'ayudante') renderAyudante();
     if(nombre === 'hub') renderHub();
     window.scrollTo(0, 0);
   }
@@ -3511,7 +3572,10 @@
       tiempos: Array.isArray(p.tiempos) ? p.tiempos : tiemposVacios(),
       afiliador_email: p.afiliadorEmail || '', telefono: p.telefono || '',
       empresa_id: p.empresaId || 'kunturmasha',
-      volumen_m3: p.volumenM3 || null, metodo_pago: p.metodoPago || ''
+      // Number(...) || 0 en vez de "p.volumenM3 || null": un volumen de 0 (o un valor no
+      // numérico) es válido y debe llegar como número, nunca como null — Supabase no debe
+      // recibir null aquí (ver también solicitudARemoto(), que ya usaba este mismo patrón).
+      volumen_m3: Number(p.volumenM3) || 0, metodo_pago: p.metodoPago || ''
     };
   }
   function pedidoDesdeRemoto(r){
@@ -4040,7 +4104,16 @@
      no bloquea publicar la solicitud. */
   var TRUJILLO_CENTRO = [-8.1116, -79.0287];
   var hubMapaLeaflet = null, hubMarcadorLeaflet = null;
+  // Rendimiento: si ya había un mapa vivo (no debería, pero por si algún camino nuevo llama
+  // a esto sin pasar por destruirMapaHub() primero) lo destruye antes de crear uno — Leaflet
+  // no libera solo sus listeners/tiles si se pisa la variable sin invocar .remove().
+  function destruirMapaHub(){
+    if(hubMapaLeaflet){ try{ hubMapaLeaflet.remove(); }catch(e){} }
+    hubMapaLeaflet = null; hubMarcadorLeaflet = null;
+    hubShellMontado = null; // fuerza a renderHub() a reconstruir el cascarón la próxima vez
+  }
   function iniciarMapaHub(){
+    if(hubMapaLeaflet){ try{ hubMapaLeaflet.remove(); }catch(e){} }
     hubMapaLeaflet = null; hubMarcadorLeaflet = null;
     if(typeof window.L === 'undefined' || !document.getElementById('hubMapa')) return;
     try{
@@ -4241,8 +4314,19 @@
      las políticas RLS de pedidos/gastos ya no exigen auth.uid() (ver
      supabase_schema.sql, sección "acceso abierto").
      ========================================================================== */
-  var MAPA_ROL_DB_A_INTERNO = { Administrador: 'admin', Chofer: 'chofer', Afiliador: 'afiliador', Cliente: 'cliente' };
-  var ROL_PILL_CLASE = { Administrador: 'rol-admin', Chofer: 'rol-chofer', Afiliador: 'rol-afiliador', Cliente: 'rol-cliente' };
+  var MAPA_ROL_DB_A_INTERNO = { Administrador: 'admin', Chofer: 'chofer', Afiliador: 'afiliador', Cliente: 'cliente', Ayudante: 'ayudante' };
+  var ROL_PILL_CLASE = { Administrador: 'rol-admin', Chofer: 'rol-chofer', Afiliador: 'rol-afiliador', Cliente: 'rol-cliente', Ayudante: 'rol-ayudante' };
+  // Inverso de MAPA_ROL_DB_A_INTERNO — para mostrar la etiqueta/pill correcta cuando el rol
+  // activo cambia por el selector rápido de rol (cambiarRolActivo()), sin volver a loguearse.
+  var INTERNO_A_ROL_DB = { admin: 'Administrador', chofer: 'Chofer', afiliador: 'Afiliador', cliente: 'Cliente', ayudante: 'Ayudante' };
+  var ETIQUETA_ROL_INTERNO = { admin: '👔 Administrador', chofer: '🚚 Chofer', afiliador: '🤝 Afiliador / Promotor', ayudante: '🧰 Ayudante', cliente: '👤 Cliente' };
+  // Roles que una credencial puede usar sin volver a loguearse (multi-rol dinámico, ver
+  // cambiarRolActivo() y actualizarSelectorRol()). Si una cuenta no trae "roles", se
+  // comporta igual que siempre: un único rol fijo, el de cred.rol.
+  function rolesDeCredencial(cred){
+    if(cred && Array.isArray(cred.roles) && cred.roles.length) return cred.roles;
+    return cred ? [MAPA_ROL_DB_A_INTERNO[cred.rol] || 'cliente'] : ['cliente'];
+  }
   var usuarioActual = null;   // { email, nombre } de la credencial que inició sesión, o null si nadie del personal entró
   var rolDbActual = null;     // 'Administrador' | 'Chofer' | 'Afiliador' | null (sin sesión de personal)
 
@@ -4264,6 +4348,7 @@
       ceRol.className = 'rol-pill ' + (ROL_PILL_CLASE[rolDbActual || 'Cliente'] || '');
     }
     actualizarBotonCambiarModo(credPropia);
+    actualizarSelectorRol(credPropia);
   }
 
   // Botón "Cambiar a modo X" — visible solo si la cuenta con sesión iniciada tiene una
@@ -4283,6 +4368,29 @@
     guardarSesionPersonal(pareja);
     entrarComoPersonal(pareja);
   });
+
+  // Multi-rol dinámico (nuevo): selector rápido de rol para cuentas con más de un rol
+  // autorizado (cred.roles — hoy solo Piero, SuperAdmin) — cambia rolActivo al instante,
+  // sin cerrar sesión ni volver a pedir contraseña. Distinto del botón "Cambiar a modo X" de
+  // arriba, que alterna entre DOS CUENTAS de una misma persona; esto alterna entre los ROLES
+  // de UNA SOLA cuenta. Si la cuenta solo tiene un rol posible, el selector queda oculto.
+  var rolSwitcherEl = document.getElementById('rolSwitcher');
+  function actualizarSelectorRol(cred){
+    var roles = cred ? rolesDeCredencial(cred) : [];
+    if(roles.length < 2){ rolSwitcherEl.hidden = true; rolSwitcherEl.innerHTML = ''; return; }
+    rolSwitcherEl.innerHTML = roles.map(function(r){ return '<option value="' + r + '">' + (ETIQUETA_ROL_INTERNO[r] || r) + '</option>'; }).join('');
+    rolSwitcherEl.value = rolActivo;
+    rolSwitcherEl.hidden = false;
+  }
+  rolSwitcherEl.addEventListener('change', function(){ cambiarRolActivo(this.value); });
+  function cambiarRolActivo(interno){
+    if(!VISTAS_POR_ROL[interno]) return;
+    rolDbActual = INTERNO_A_ROL_DB[interno] || rolDbActual;
+    aplicarRol(interno);
+    actualizarSesionUI();
+    actualizarSelectorEmpresa(); // el switch de empresa solo es visible/editable en modo Administrador
+    irAVista(VISTAS_POR_ROL[interno].defaultView);
+  }
 
   function cargarSesionPersonal(){
     try{
@@ -4308,9 +4416,12 @@
     usuarioActual = { email: cred.email, nombre: cred.nombre };
     rolDbActual = cred.rol;
     var interno = MAPA_ROL_DB_A_INTERNO[rolDbActual] || 'cliente';
+    aplicarRol(interno);
+    // Después de fijar rolActivo (aplicarRol) — así el selector rápido de rol y el switch de
+    // empresa quedan pintados con el rol/empresa correctos desde el primer render, no con los
+    // de la sesión anterior (ver actualizarSelectorRol()/actualizarSelectorEmpresa()).
     actualizarSesionUI();
     actualizarSelectorEmpresa();
-    aplicarRol(interno);
     irAVista(VISTAS_POR_ROL[interno].defaultView);
     // Ver la misma lógica en cancelarEdicion(): si quien entra es un afiliador, su propia
     // persona ya aparece elegida en "Conseguido por" desde el primer vistazo al formulario.
@@ -4374,6 +4485,77 @@
 
   document.getElementById('btnLogout').addEventListener('click', cerrarSesionPersonal);
 
+  /* ---------- Vista del rol "Ayudante": checklist de descarga + incidencias ----------
+     El checklist (manguera conectada / descarga completada) es solo de este navegador —
+     no hay columna en Supabase para eso todavía, así que vive en su propia llave de
+     localStorage, independiente de "pedidos". La incidencia SÍ se guarda en el pedido
+     (pedidos[].notas, vía guardarPedidos()) para que la vea también quien mire Ver
+     agenda/Despacho, incluso desde otro dispositivo. */
+  var AYUDANTE_CHECKLIST_KEY = 'kunturmasha_ayudante_checklist_v1';
+  function cargarChecklistAyudante(){
+    try{ var obj = JSON.parse(localStorage.getItem(AYUDANTE_CHECKLIST_KEY) || '{}'); return (obj && typeof obj === 'object') ? obj : {}; }
+    catch(e){ return {}; }
+  }
+  var checklistAyudante = cargarChecklistAyudante();
+  function guardarChecklistAyudante(){
+    try{ localStorage.setItem(AYUDANTE_CHECKLIST_KEY, JSON.stringify(checklistAyudante)); }catch(e){}
+  }
+  function renderAyudante(){
+    var cont = document.getElementById('ayudanteLista');
+    if(!cont) return;
+    var delDia = pedidos.filter(function(p){
+      return p.fecha === fechaSeleccionada && (p.empresaId || 'kunturmasha') === empresaActivaId && esAbierto(p);
+    });
+    if(!delDia.length){
+      cont.innerHTML = '<div class="panel"><div class="empty-state">Sin viajes en curso hoy para tu empresa.</div></div>';
+      return;
+    }
+    cont.innerHTML = delDia.map(function(p){
+      var chk = checklistAyudante[p.id] || {};
+      return '<div class="panel" style="margin-bottom:12px;">' +
+          '<div class="order-head"><div class="order-time">📍 ' + escapeHtml(p.ubicacion || p.cliente || p.id) + '</div><div class="order-price mono">' + escapeHtml(p.horaInicio || '') + '</div></div>' +
+          '<div class="order-meta">' +
+            (p.tipoAlmacen ? '<span class="meta-tag">' + escapeHtml(p.tipoAlmacen) + '</span>' : '') +
+            (p.manguera ? '<span class="meta-tag">🧵 ' + escapeHtml(p.manguera) + '</span>' : '') +
+            (p.piso && p.piso !== '-' ? '<span class="meta-tag">🏢 ' + escapeHtml(p.piso) + '</span>' : '') +
+          '</div>' +
+          '<label style="display:flex; gap:8px; align-items:center; margin-top:10px;"><input type="checkbox" class="chk-manguera" data-id="' + escapeHtml(p.id) + '"' + (chk.manguera ? ' checked' : '') + '> Manguera conectada</label>' +
+          '<label style="display:flex; gap:8px; align-items:center; margin-top:6px;"><input type="checkbox" class="chk-descarga" data-id="' + escapeHtml(p.id) + '"' + (chk.descarga ? ' checked' : '') + '> Descarga completada</label>' +
+          '<div class="form-group" style="margin-top:10px;"><label>Reportar incidencia en obra</label>' +
+            '<textarea class="incidencia-texto" data-id="' + escapeHtml(p.id) + '" rows="2" placeholder="Ej: Fuga en la conexión, acceso bloqueado..."></textarea>' +
+            '<button type="button" class="btn-ghost btn-reportar-incidencia" data-id="' + escapeHtml(p.id) + '" style="margin-top:6px;">🚨 Reportar incidencia</button>' +
+          '</div>' +
+          (p.notas ? '<p class="campo-nota" style="margin-top:8px;">📝 ' + escapeHtml(p.notas) + '</p>' : '') +
+        '</div>';
+    }).join('');
+  }
+  // Delegación de eventos sobre el contenedor (se repinta con innerHTML en cada renderAyudante,
+  // así que atar los listeners una sola vez aquí evita duplicarlos en cada refresco).
+  document.getElementById('ayudanteLista').addEventListener('change', function(e){
+    var chkM = e.target.closest('.chk-manguera');
+    var chkD = e.target.closest('.chk-descarga');
+    var campo = chkM ? chkM : chkD;
+    if(!campo) return;
+    var id = campo.dataset.id;
+    checklistAyudante[id] = checklistAyudante[id] || {};
+    checklistAyudante[id][chkM ? 'manguera' : 'descarga'] = campo.checked;
+    guardarChecklistAyudante();
+  });
+  document.getElementById('ayudanteLista').addEventListener('click', function(e){
+    var btn = e.target.closest('.btn-reportar-incidencia');
+    if(!btn) return;
+    var id = btn.dataset.id;
+    var textarea = document.querySelector('.incidencia-texto[data-id="' + CSS.escape(id) + '"]');
+    var texto = textarea ? textarea.value.trim() : '';
+    if(!texto) return;
+    var p = pedidos.find(function(x){ return x.id === id; });
+    if(!p) return;
+    var marca = '[Incidencia — Ayudante, ' + new Date().toLocaleString('es-PE') + '] ' + texto;
+    p.notas = p.notas ? (p.notas + ' | ' + marca) : marca;
+    guardarPedidos();
+    renderAyudante();
+  });
+
   /* ---------- Ajustes: cuenta propia + lista fija de personal ---------- */
   function renderAjustes(){
     var tbody = document.getElementById('tbodyUsuarios');
@@ -4400,7 +4582,7 @@
   // ajuste manual también cuenta como día trabajado, igual que un viaje real.
   function calcularComisionesChofer(cred){
     var completados = pedidos.filter(function(p){ return p.estado === 'Completado' && p.chofer === cred.nombre; });
-    var movsViajes = completados.map(function(p){ return { fecha: p.fecha, concepto: 'Viaje — ' + (p.cliente || p.id), monto: (Number(p.precio) || 0) * 0.05 }; });
+    var movsViajes = completados.map(function(p){ return { fecha: p.fecha, concepto: 'Viaje — ' + (p.cliente || p.id), monto: (Number(p.precio) || 0) * COMISION_ESTANDAR }; });
     var ajustes = AJUSTES_HISTORICOS.filter(function(a){ return a.email === cred.email && a.tipo === 'chofer'; });
     var movsAjustes = ajustes.map(function(a){ return { fecha: a.fecha, concepto: a.concepto || 'Ajuste manual', monto: a.monto }; });
     var movimientos = movsViajes.concat(movsAjustes).sort(function(x, y){ return y.fecha.localeCompare(x.fecha); });
@@ -4417,7 +4599,7 @@
   // billetera de promotor, sin importar con cuál haya iniciado sesión quien consulta.
   function calcularComisionesPromotor(persona){
     var completados = pedidos.filter(function(p){ return p.estado === 'Completado' && perteneceAPersona(p.afiliadorEmail, persona); });
-    var movsViajes = completados.map(function(p){ return { fecha: p.fecha, concepto: 'Pedido — ' + (p.cliente || p.id), monto: (Number(p.precio) || 0) * 0.05 }; });
+    var movsViajes = completados.map(function(p){ return { fecha: p.fecha, concepto: 'Pedido — ' + (p.cliente || p.id), monto: (Number(p.precio) || 0) * COMISION_ESTANDAR }; });
     var ajustes = AJUSTES_HISTORICOS.filter(function(a){ return persona.emails.indexOf(a.email) !== -1 && a.tipo === 'promotor'; });
     var movsAjustes = ajustes.map(function(a){ return { fecha: a.fecha, concepto: a.concepto || 'Ajuste manual', monto: a.monto }; });
     var movimientos = movsViajes.concat(movsAjustes).sort(function(x, y){ return y.fecha.localeCompare(x.fecha); });
