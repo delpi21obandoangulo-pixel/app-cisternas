@@ -11,7 +11,7 @@
 --      puede ejecutar más de una vez sin romper nada.
 --
 -- El control de acceso de esta app YA NO usa Supabase Auth: el personal (Administrador/
--- Chofer/Afiliador) inicia sesión con un correo y contraseña fijos que la propia app
+-- Chofer/Promotor) inicia sesión con un correo y contraseña fijos que la propia app
 -- valida en el navegador (ver index.html, CREDENCIALES_PERSONAL), y los clientes entran
 -- directo sin ninguna cuenta. Como nunca hay una sesión real de Supabase Auth, auth.uid()
 -- es siempre null aquí — las políticas de abajo son deliberadamente abiertas (using(true))
@@ -51,11 +51,28 @@ comment on table public.pedidos is 'Pedidos de despacho de agua (uno por servici
 create index if not exists pedidos_fecha_idx on public.pedidos (fecha);
 create index if not exists pedidos_codigo_cliente_idx on public.pedidos (codigo_cliente);
 
--- Correo del afiliador (una de las 5 cuentas afiliador1..5@kunturmasha.pe) que registró
--- este pedido, si lo hizo un afiliador — la app lo llena sola al crear el pedido, no es
--- un campo del formulario. Sirve para calcular la comisión del 5% de cada afiliador en
+-- Cambio de terminología "Afiliador" -> "Promotor" (ver index.html): si el proyecto ya
+-- corrió una versión anterior de este archivo, la columna vieja "afiliador_email" existe
+-- con datos reales — se renombra en vez de perder esos datos. En un proyecto nuevo (que
+-- nunca corrió la versión vieja) la columna vieja no existe y este bloque no hace nada.
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'pedidos' and column_name = 'afiliador_email'
+  ) and not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'pedidos' and column_name = 'promotor_email'
+  ) then
+    alter table public.pedidos rename column afiliador_email to promotor_email;
+  end if;
+end $$;
+
+-- Correo del promotor (una de las 5 cuentas promotor1..5@kunturmasha.pe) que registró
+-- este pedido, si lo hizo un promotor — la app lo llena sola al crear el pedido, no es
+-- un campo del formulario. Sirve para calcular la comisión del 5% de cada promotor en
 -- "Mi Perfil / Billetera" sin depender de nada guardado solo en un navegador.
-alter table public.pedidos add column if not exists afiliador_email text;
+alter table public.pedidos add column if not exists promotor_email text;
 
 -- Teléfono/WhatsApp de contacto del cliente, capturado en el formulario de Despacho.
 -- Visible en la Agenda del día y en el registro detallado de Contabilidad.
@@ -232,6 +249,45 @@ begin
     where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'ofertas_subasta'
   ) then
     alter publication supabase_realtime add table public.ofertas_subasta;
+  end if;
+end $$;
+
+-- ============================================================================
+-- ---------- Política de pagos por empresa (Mi Perfil del Administrador) -------
+-- ============================================================================
+-- Cada empresa asociada define aquí cómo se le paga a chofer, ayudante y promotor (ver
+-- index.html, configPagosDe()/guardarConfigPagos()/panelConfigPagosHtml()). Una fila por
+-- empresa_id — "upsert" al guardar, así que nunca hay más de una fila por empresa. Si una
+-- empresa nunca guardó nada, simplemente no tiene fila aquí y la app usa sus valores por
+-- defecto (el comportamiento de siempre) desde el propio código, sin necesidad de leer nada.
+create table if not exists public.config_empresas (
+  empresa_id           text primary key,
+  chofer_modalidad     text not null default 'legado'
+                       check (chofer_modalidad in ('legado','fijo_dia','fijo_viaje','porcentaje_viaje')),
+  chofer_monto         numeric(10,2) not null default 0,
+  ayudante_modalidad   text not null default 'legado'
+                       check (ayudante_modalidad in ('legado','fijo_dia','fijo_viaje','porcentaje_viaje')),
+  ayudante_monto       numeric(10,2) not null default 0,
+  promotor_habilitado  boolean not null default true,
+  promotor_modalidad   text not null default 'porcentaje_viaje'
+                       check (promotor_modalidad in ('fijo_dia','fijo_viaje','porcentaje_viaje')),
+  promotor_monto       numeric(10,2) not null default 5,
+  updated_at           timestamptz not null default now()
+);
+comment on table public.config_empresas is 'Política de pagos (chofer/ayudante/promotor) configurable por cada empresa asociada — una fila por empresa_id.';
+
+alter table public.config_empresas enable row level security;
+drop policy if exists "config_empresas_acceso_abierto" on public.config_empresas;
+create policy "config_empresas_acceso_abierto" on public.config_empresas
+  for all using (true) with check (true);
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'config_empresas'
+  ) then
+    alter publication supabase_realtime add table public.config_empresas;
   end if;
 end $$;
 

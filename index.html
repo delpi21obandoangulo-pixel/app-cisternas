@@ -307,7 +307,7 @@
   }
   .rol-pill.rol-admin{background:color-mix(in srgb, var(--channel) 18%, transparent); color:var(--channel); border-color:color-mix(in srgb, var(--channel) 40%, transparent);}
   .rol-pill.rol-chofer{background:var(--warn-bg); color:var(--warn); border-color:color-mix(in srgb, var(--warn) 40%, transparent);}
-  .rol-pill.rol-afiliador{background:color-mix(in srgb, var(--clay) 18%, transparent); color:var(--clay); border-color:color-mix(in srgb, var(--clay) 40%, transparent);}
+  .rol-pill.rol-promotor{background:color-mix(in srgb, var(--clay) 18%, transparent); color:var(--clay); border-color:color-mix(in srgb, var(--clay) 40%, transparent);}
   .rol-pill.rol-cliente{background:var(--good-bg); color:var(--good); border-color:color-mix(in srgb, var(--good) 40%, transparent);}
   .rol-pill.rol-ayudante{background:color-mix(in srgb, var(--bad) 16%, transparent); color:var(--bad); border-color:color-mix(in srgb, var(--bad) 40%, transparent);}
   #rolSwitcher{background:var(--panel); color:var(--ink); border:1px solid var(--border); border-radius:8px; font-size:0.72rem; padding:4px 6px;}
@@ -338,14 +338,14 @@
   }
   .auth-note{font-size:0.72rem; color:var(--muted); margin:14px 0 0;}
 
-  /* ---------- Barra de afiliador (vista Agendar) ---------- */
-  .afiliador-bar{
+  /* ---------- Barra de promotor (vista Agendar) ---------- */
+  .promotor-bar{
     background:var(--surface); border:1px solid var(--border-strong); border-radius:var(--radius-sm);
     padding:14px 16px; margin-bottom:14px; box-shadow:var(--shadow);
     backdrop-filter:var(--blur); -webkit-backdrop-filter:var(--blur);
   }
-  .afiliador-bar .form-group{margin-bottom:12px;}
-  .afiliador-sub{display:flex; gap:6px; flex-wrap:wrap;}
+  .promotor-bar .form-group{margin-bottom:12px;}
+  .promotor-sub{display:flex; gap:6px; flex-wrap:wrap;}
 
   /* ---------- Contabilidad ---------- */
   .sim-banner{
@@ -611,7 +611,7 @@
 </head>
 <body>
 <!--
-  Modal de acceso del personal (Administrador / Chofer / Afiliador). Ya NO es una pantalla
+  Modal de acceso del personal (Administrador / Chofer / Promotor). Ya NO es una pantalla
   que tapa la app: los clientes entran directo sin sesión, y este modal solo aparece si
   alguien del personal presiona "Acceso personal" en la barra superior. Login validado
   en JavaScript contra una lista fija de correos/contraseñas (CREDENCIALES_PERSONAL) —
@@ -636,7 +636,7 @@
       </div>
       <button type="submit" class="btn" style="width:100%;">Iniciar sesión</button>
     </form>
-    <p class="auth-note">Solo para Administradores, Choferes y Afiliadores. Los clientes no necesitan cuenta.</p>
+    <p class="auth-note">Solo para Administradores, Choferes y Promotores. Los clientes no necesitan cuenta.</p>
   </div>
 </div>
 <div id="app">
@@ -723,7 +723,7 @@
       <button class="home-card" data-goto="ajustes">
         <span class="home-icon">⚙️</span>
         <h2>Ajustes</h2>
-        <p>Revisa tu cuenta y la lista de personal registrado (Administrador, Chofer, Afiliador).</p>
+        <p>Revisa tu cuenta y la lista de personal registrado (Administrador, Chofer, Promotor).</p>
         <span class="home-cta">Entrar →</span>
       </button>
     </div>
@@ -857,18 +857,18 @@
   </section>
 
   <section id="vistaAgendar" hidden>
-  <div class="afiliador-bar" id="afiliadorBar" hidden>
+  <div class="promotor-bar" id="promotorBar" hidden>
     <div class="form-group">
-      <label>Tu nombre (afiliador)</label>
-      <input type="text" id="afiliadorNombreInput" placeholder="Ej: María — Zona El Porvenir">
-      <p class="campo-nota" style="margin:6px 0 0;">Se guarda en este navegador. Los pedidos que registres quedan asociados a este nombre en "Mis Pedidos Afiliados".</p>
+      <label>Tu nombre (promotor)</label>
+      <input type="text" id="promotorNombreInput" placeholder="Ej: María — Zona El Porvenir">
+      <p class="campo-nota" style="margin:6px 0 0;">Se guarda en este navegador. Los pedidos que registres quedan asociados a este nombre en "Mis Pedidos como Promotor".</p>
     </div>
-    <div class="afiliador-sub" id="afiliadorSub">
-      <button class="sub-tab active" data-afiliadorsub="nuevo" type="button">+ Nuevo pedido</button>
-      <button class="sub-tab" data-afiliadorsub="mios" type="button">Mis Pedidos Afiliados</button>
+    <div class="promotor-sub" id="promotorSub">
+      <button class="sub-tab active" data-promotorsub="nuevo" type="button">+ Nuevo pedido</button>
+      <button class="sub-tab" data-promotorsub="mios" type="button">Mis Pedidos como Promotor</button>
     </div>
   </div>
-  <main class="layout-solo" id="afiliadorFormWrap">
+  <main class="layout-solo" id="promotorFormWrap">
     <div class="panel form-panel">
       <h2><span id="formTitle">Registrar nuevo despacho</span><span class="edit-flag" id="editFlag" hidden></span></h2>
       <form id="orderForm">
@@ -947,12 +947,12 @@
             <datalist id="listaAyudantes"></datalist>
           </div>
         </div>
-        <p class="campo-nota">Sueldo por viaje completado, según el precio acordado: más de S/. 150 → chofer S/. 20.00 + ayudante S/. 10.00 · S/. 150 o menos → chofer S/. 10.00 + ayudante S/. 5.00 — se calcula solo, no hace falta registrarlo en Gastos.</p>
+        <p class="campo-nota" id="notaManoDeObra">Sueldo por viaje completado, según el precio acordado: más de S/. 150 → chofer S/. 20.00 + ayudante S/. 10.00 · S/. 150 o menos → chofer S/. 10.00 + ayudante S/. 5.00 — se calcula solo, no hace falta registrarlo en Gastos.</p>
 
-        <div class="form-group">
-          <label>Conseguido por / Afiliador</label>
+        <div class="form-group" id="groupConseguidoPor">
+          <label>Conseguido por / Promotor</label>
           <select id="conseguidoPor"></select>
-          <p class="campo-nota" style="margin:6px 0 0;">Quién trajo a este cliente — al completarse el viaje, esa persona recibe el 5% de comisión en su "Mi Perfil / Billetera". Si lo registra un afiliador con sesión iniciada, este campo se autocompleta solo (igual se puede cambiar).</p>
+          <p class="campo-nota" id="notaComisionPromotor" style="margin:6px 0 0;">Quién trajo a este cliente — al completarse el viaje, esa persona recibe comisión en su "Mi Perfil / Billetera". Si lo registra un promotor con sesión iniciada, este campo se autocompleta solo (igual se puede cambiar).</p>
         </div>
 
         <div class="form-row">
@@ -1225,16 +1225,14 @@
         <p style="font-size:0.86rem; color:var(--muted); margin:0 0 8px;">Correo: <strong style="color:var(--ink);" id="ajustesCuentaEmail">—</strong></p>
         <p style="font-size:0.86rem; color:var(--muted); margin:0;">Rol: <span class="rol-pill" id="ajustesCuentaRol"></span></p>
       </div>
-      <div class="panel">
-        <h2>Personal registrado</h2>
-        <p style="font-size:0.8rem; color:var(--muted); margin:0 0 12px;">Cuentas fijas del personal (correo/contraseña validados en la app). Los roles no se editan aquí — están definidos en el código.</p>
-        <div class="tabla-wrap">
-          <table class="tabla-registro" id="tablaUsuarios">
-            <thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th></tr></thead>
-            <tbody id="tbodyUsuarios"></tbody>
-          </table>
-        </div>
-      </div>
+      <!--
+        La lista de cuentas del personal (correos, y para Piero también contraseñas) ya NO
+        se muestra en el perfil de administradores normales — cada empresa solo debe ver lo
+        suyo. Solo la cuenta maestra (piero@digimarkspace.pe) ve aquí el "Directorio Central
+        de Accesos" con las 150 cuentas de las 5 empresas asociadas (ver renderAjustes() /
+        renderDirectorioCentral()). Para cualquier otra cuenta, este contenedor queda vacío.
+      -->
+      <div id="ajustesPersonalWrap"></div>
     </main>
   </section>
 </div>
@@ -1355,24 +1353,39 @@
   }
 
   var HOY = isoHoy();
-  // Sueldo por viaje completado, escalonado según el precio acordado del viaje: los viajes
-  // de mayor valor (> S/. 150) pagan una tarifa más alta que los de precio estándar (<= S/. 150).
-  function manoDeObra(precio){
-    var premium = Number(precio) > 150;
-    return { chofer: premium ? 20 : 10, ayudante: premium ? 10 : 5 };
+  // Cuánto corresponde por UN viaje según la modalidad configurada (ver configPagosDe()):
+  // "porcentaje_viaje" = % del precio del viaje; "fijo_viaje" = monto fijo por viaje;
+  // "fijo_dia" = 0 aquí (se paga una sola vez por día, no por viaje — ver construirAsientos());
+  // "legado" = el escalonado de siempre, para empresas que no configuraron nada todavía.
+  function montoPorViajeSegunModalidad(modalidad, monto, precio, premiumLegado, estandarLegado){
+    if(modalidad === 'porcentaje_viaje') return precio * ((Number(monto) || 0) / 100);
+    if(modalidad === 'fijo_viaje') return Number(monto) || 0;
+    if(modalidad === 'fijo_dia') return 0;
+    return precio > 150 ? premiumLegado : estandarLegado; // 'legado'
+  }
+  // Sueldo por viaje completado — antes escalonado igual para todas las empresas, ahora
+  // depende de la política de pagos de "empresaId" (Mi Perfil del Administrador). Si esa
+  // empresa nunca configuró nada, se comporta exactamente como antes (ver configPagosDe()).
+  function manoDeObra(precio, empresaId){
+    precio = Number(precio) || 0;
+    var cfg = configPagosDe(empresaId || empresaActivaId);
+    return {
+      chofer: montoPorViajeSegunModalidad(cfg.choferModalidad, cfg.choferMonto, precio, 20, 10),
+      ayudante: montoPorViajeSegunModalidad(cfg.ayudanteModalidad, cfg.ayudanteMonto, precio, 10, 5)
+    };
   }
 
   /* ==========================================================================
      Control de acceso por roles. Ya NO depende de Supabase Auth: el personal
-     (Administrador/Chofer/Afiliador) inicia sesión con correo y contraseña
+     (Administrador/Chofer/Promotor) inicia sesión con correo y contraseña
      validados aquí mismo, contra la lista fija CREDENCIALES_PERSONAL — no hay
      registro, no hay recuperación de contraseña, no hay sesión de servidor.
      Los clientes no tienen cuenta: entran directo con rolActivo = 'cliente'.
-     Las claves cortas de abajo (admin/cliente/chofer/afiliador) son el
+     Las claves cortas de abajo (admin/cliente/chofer/promotor) son el
      vocabulario interno de la UI; MAPA_ROL_DB_A_INTERNO traduce el rol "bonito"
      (Administrador, etc.) a estas claves.
      ========================================================================== */
-  var AFILIADOR_NOMBRE_KEY = 'kunturmasha_afiliador_nombre_v1';
+  var PROMOTOR_NOMBRE_KEY = 'kunturmasha_promotor_nombre_v1';
   var AFILIACIONES_KEY = 'kunturmasha_afiliaciones_v1';
   var SESION_PERSONAL_KEY = 'kunturmasha_sesion_personal_v1';
   var PERFIL_NOMBRES_KEY = 'kunturmasha_perfil_nombres_v1'; // { email: nombre editado desde "Mi Perfil" }, ver nombreMostrado()
@@ -1390,7 +1403,7 @@
   // admin1 <-> chofer1) — habilita el botón "Cambiar a modo X" sin pedir contraseña de nuevo.
   // "personaId": a qué persona real pertenece esta cuenta (ver PERSONAS más abajo) — Piero,
   // Frank y Shimo tienen dos cuentas cada uno (Admin y Chofer) pero son UNA sola persona para
-  // efectos de "Conseguido por / Afiliador" y su comisión de promotor.
+  // efectos de "Conseguido por / Promotor" y su comisión de promotor.
   // "empresaId": a qué empresa (ver EMPRESAS más abajo) pertenece esta cuenta — es la base del
   // aislamiento entre empresas asociadas (ver actualizarSelectorEmpresa()): una cuenta con
   // empresaId fijo solo puede operar esa empresa, nunca cambiar al espacio de otra.
@@ -1402,9 +1415,9 @@
   // el selector rápido de rol de la cabecera. Si falta, la cuenta tiene un único rol fijo
   // (cred.rol), como siempre.
   // "superAdmin": Piero, cuenta maestra — accesoGlobal + los 4 roles de personal a la vez
-  // (Administrador/Chofer/Ayudante/Afiliador), pensada para pruebas y soporte de toda la red.
+  // (Administrador/Chofer/Ayudante/Promotor), pensada para pruebas y soporte de toda la red.
   var CREDENCIALES_PERSONAL = [
-    { email: 'piero@digimarkspace.pe', password: 'piero2026', rol: 'Administrador', roles: ['admin', 'chofer', 'ayudante', 'afiliador'], nombre: 'Piero (SuperAdmin)', personaId: 'piero', empresaId: 'digimark-space', accesoGlobal: true, superAdmin: true },
+    { email: 'piero@digimarkspace.pe', password: 'piero2026', rol: 'Administrador', roles: ['admin', 'chofer', 'ayudante', 'promotor'], nombre: 'Piero (SuperAdmin)', personaId: 'piero', empresaId: 'digimark-space', accesoGlobal: true, superAdmin: true },
     { email: 'admin@digimarkspace.pe', password: 'digimark2026', rol: 'Administrador', nombre: 'Equipo DigiMark Space (Admin)', personaId: 'digimark-admin', empresaId: 'digimark-space', accesoGlobal: true },
     { email: 'admin1@kunturmasha.pe', password: 'admin2026', rol: 'Administrador', nombre: 'Piero (Admin)', parejaEmail: 'chofer1@kunturmasha.pe', personaId: 'piero', empresaId: 'kunturmasha' },
     { email: 'admin2@kunturmasha.pe', password: 'admin2026', rol: 'Administrador', nombre: 'Frank (Admin)', personaId: 'frank', empresaId: 'kunturmasha' },
@@ -1412,11 +1425,11 @@
     { email: 'chofer1@kunturmasha.pe', password: 'chofer2026', rol: 'Chofer', nombre: 'Piero (Chofer)', parejaEmail: 'admin1@kunturmasha.pe', personaId: 'piero', empresaId: 'kunturmasha' },
     { email: 'chofer2@kunturmasha.pe', password: 'chofer2026', rol: 'Chofer', nombre: 'Frank (Chofer)', personaId: 'frank', empresaId: 'kunturmasha' },
     { email: 'chofer3@kunturmasha.pe', password: 'chofer2026', rol: 'Chofer', nombre: 'Shimo (Chofer)', personaId: 'shimo', empresaId: 'kunturmasha' },
-    { email: 'afiliador1@kunturmasha.pe', password: 'afiliador2026', rol: 'Afiliador', nombre: 'Ronald (Afiliador)', personaId: 'ronald', empresaId: 'kunturmasha' },
-    { email: 'afiliador2@kunturmasha.pe', password: 'afiliador2026', rol: 'Afiliador', nombre: 'Jherson (Afiliador)', personaId: 'jherson', empresaId: 'kunturmasha' },
-    { email: 'afiliador3@kunturmasha.pe', password: 'afiliador2026', rol: 'Afiliador', nombre: 'Afiliador 3', personaId: 'afiliador3', empresaId: 'kunturmasha' },
-    { email: 'afiliador4@kunturmasha.pe', password: 'afiliador2026', rol: 'Afiliador', nombre: 'Afiliador 4', personaId: 'afiliador4', empresaId: 'kunturmasha' },
-    { email: 'afiliador5@kunturmasha.pe', password: 'afiliador2026', rol: 'Afiliador', nombre: 'Afiliador 5', personaId: 'afiliador5', empresaId: 'kunturmasha' },
+    { email: 'promotor1@kunturmasha.pe', password: 'promotor2026', rol: 'Promotor', nombre: 'Ronald (Promotor)', personaId: 'ronald', empresaId: 'kunturmasha' },
+    { email: 'promotor2@kunturmasha.pe', password: 'promotor2026', rol: 'Promotor', nombre: 'Jherson (Promotor)', personaId: 'jherson', empresaId: 'kunturmasha' },
+    { email: 'promotor3@kunturmasha.pe', password: 'promotor2026', rol: 'Promotor', nombre: 'Promotor 3', personaId: 'promotor3', empresaId: 'kunturmasha' },
+    { email: 'promotor4@kunturmasha.pe', password: 'promotor2026', rol: 'Promotor', nombre: 'Promotor 4', personaId: 'promotor4', empresaId: 'kunturmasha' },
+    { email: 'promotor5@kunturmasha.pe', password: 'promotor2026', rol: 'Promotor', nombre: 'Promotor 5', personaId: 'promotor5', empresaId: 'kunturmasha' },
     { email: 'admin@aquatrujillo.pe', password: 'admin2026', rol: 'Administrador', nombre: 'Admin AquaTrujillo', personaId: 'admin-aquatrujillo', empresaId: 'aqua-trujillo' },
     { email: 'chofer@aquatrujillo.pe', password: 'chofer2026', rol: 'Chofer', nombre: 'Chofer AquaTrujillo 1', personaId: 'chofer-aquatrujillo-1', empresaId: 'aqua-trujillo' },
     { email: 'admin@gotadorada.pe', password: 'admin2026', rol: 'Administrador', nombre: 'Admin Gota Dorada', personaId: 'admin-gotadorada', empresaId: 'gota-dorada' },
@@ -1433,26 +1446,26 @@
 
   /* ==========================================================================
      Personas promotoras — TODO el personal puede aparecer en "Conseguido por /
-     Afiliador" (Administradores y Choferes incluidos, no solo Afiliadores), y a
+     Promotor" (Administradores y Choferes incluidos, no solo Promotores), y a
      cada uno se le liquida su comisión del 5% en su propia billetera cuando trae
      un cliente/viaje. Como Piero/Frank/Shimo tienen dos cuentas (Admin y Chofer),
      agrupamos por "persona" (una fila aquí = una persona real, con los correos de
      TODAS sus cuentas) para que su comisión de promotor sea una sola, sin importar
      con cuál de sus cuentas haya iniciado sesión quien consulta.
-     pedidos.afiliadorEmail guarda el id de esta lista (ej. "piero", "ronald") desde
+     pedidos.promotorEmail guarda el id de esta lista (ej. "piero", "ronald") desde
      este cambio en adelante; perteneceAPersona() también reconoce el formato viejo
-     (un correo de afiliador puntual) para no perder los pedidos ya registrados.
+     (un correo de promotor puntual) para no perder los pedidos ya registrados.
      ========================================================================== */
   var PERSONAS = [
     { id: 'digimark-admin', nombre: 'Equipo DigiMark Space (Admin)', emails: ['admin@digimarkspace.pe'] },
     { id: 'piero', nombre: 'Piero (Admin / Chofer / SuperAdmin)', emails: ['admin1@kunturmasha.pe', 'chofer1@kunturmasha.pe', 'piero@digimarkspace.pe'] },
     { id: 'frank', nombre: 'Frank (Admin / Chofer)', emails: ['admin2@kunturmasha.pe', 'chofer2@kunturmasha.pe'] },
     { id: 'shimo', nombre: 'Shimo (Admin / Chofer)', emails: ['admin3@kunturmasha.pe', 'chofer3@kunturmasha.pe'] },
-    { id: 'ronald', nombre: 'Ronald (Afiliador)', emails: ['afiliador1@kunturmasha.pe'] },
-    { id: 'jherson', nombre: 'Jherson (Afiliador)', emails: ['afiliador2@kunturmasha.pe'] },
-    { id: 'afiliador3', nombre: 'Afiliador 3', emails: ['afiliador3@kunturmasha.pe'] },
-    { id: 'afiliador4', nombre: 'Afiliador 4', emails: ['afiliador4@kunturmasha.pe'] },
-    { id: 'afiliador5', nombre: 'Afiliador 5', emails: ['afiliador5@kunturmasha.pe'] },
+    { id: 'ronald', nombre: 'Ronald (Promotor)', emails: ['promotor1@kunturmasha.pe'] },
+    { id: 'jherson', nombre: 'Jherson (Promotor)', emails: ['promotor2@kunturmasha.pe'] },
+    { id: 'promotor3', nombre: 'Promotor 3', emails: ['promotor3@kunturmasha.pe'] },
+    { id: 'promotor4', nombre: 'Promotor 4', emails: ['promotor4@kunturmasha.pe'] },
+    { id: 'promotor5', nombre: 'Promotor 5', emails: ['promotor5@kunturmasha.pe'] },
     { id: 'admin-aquatrujillo', nombre: 'Admin AquaTrujillo', emails: ['admin@aquatrujillo.pe'] },
     { id: 'chofer-aquatrujillo-1', nombre: 'Chofer AquaTrujillo 1', emails: ['chofer@aquatrujillo.pe'] },
     { id: 'admin-gotadorada', nombre: 'Admin Gota Dorada', emails: ['admin@gotadorada.pe'] },
@@ -1472,7 +1485,7 @@
     if(!valorGuardado || !persona) return false;
     return valorGuardado === persona.id || persona.emails.indexOf(valorGuardado) !== -1;
   }
-  // Traduce lo que haya guardado en pedidos.afiliadorEmail (id de persona actual, o un
+  // Traduce lo que haya guardado en pedidos.promotorEmail (id de persona actual, o un
   // correo suelto de antes de este cambio) al id de persona para preseleccionar el
   // <select id="conseguidoPor"> al editar un pedido.
   function resolverPersonaId(valorGuardado){
@@ -1501,7 +1514,7 @@
   // mismo ajuste dos veces. Ver calcularComisionesChofer()/calcularComisionesPromotor().
   var AJUSTES_HISTORICOS = [
     { email: 'chofer1@kunturmasha.pe', fecha: '2026-08-21', monto: 110.00, concepto: 'Saldo acumulado registrado', tipo: 'chofer' },
-    { email: 'afiliador1@kunturmasha.pe', fecha: '2026-08-21', monto: 70.00, concepto: 'Saldo acumulado registrado', tipo: 'promotor' }
+    { email: 'promotor1@kunturmasha.pe', fecha: '2026-08-21', monto: 70.00, concepto: 'Saldo acumulado registrado', tipo: 'promotor' }
   ];
 
   // Nombre "visible" editable por la propia persona desde Mi Perfil — se guarda por correo en
@@ -1530,7 +1543,7 @@
     admin: { tabs: ['home', 'agenda', 'cotizar', 'hub', 'agendar', 'ayudante', 'contabilidad', 'perfil', 'ajustes'], defaultView: 'home' },
     cliente: { tabs: ['home', 'agenda', 'cotizar', 'hub'], defaultView: 'agenda' },
     chofer: { tabs: ['home', 'agenda', 'perfil'], defaultView: 'agenda' },
-    afiliador: { tabs: ['home', 'agendar', 'perfil'], defaultView: 'agendar' },
+    promotor: { tabs: ['home', 'agendar', 'perfil'], defaultView: 'agendar' },
     // Nuevo rol operativo: checklist de descarga (conexión de manguera, descarga completada,
     // reporte de incidencias) — ver renderAyudante(). También ve Mi Perfil (sin comisión propia
     // salvo que además tenga un personaId como promotor).
@@ -1576,8 +1589,171 @@
     { id: 'cisternas-el-valle', nombre: 'Cisternas El Valle', esSedeCentral: false, comisionPeaje: COMISION_ESTANDAR, choferesDemo: ['Chofer Cisternas El Valle 1'] },
     { id: 'manantial-sur', nombre: 'Manantial Sur', esSedeCentral: false, comisionPeaje: COMISION_ESTANDAR, choferesDemo: ['Chofer Manantial Sur 1'] }
   ];
+
+  /* ==========================================================================
+     Directorio Central de Accesos (solo visible para piero@digimarkspace.pe, ver
+     renderDirectorioCentral()): 150 cuentas de prueba — 10 para cada uno de los 3 roles
+     operativos (Administrador, Chofer, Ayudante) en cada una de las 5 empresas asociadas
+     (no Sede Central: DigiMark Space no tiene su propia flota). Se generan una sola vez al
+     cargar la página, no en cada render, y se agregan a CREDENCIALES_PERSONAL para que sean
+     cuentas de verdad (se puede iniciar sesión con cualquiera): así Piero puede copiarle a
+     una empresa credenciales ya listas para su Administrador/Chofer/Ayudante en vez de
+     inventarlas a mano cada vez. La contraseña (8 dígitos) sale de un hash simple del correo
+     — no es criptográficamente aleatoria, pero es fija: no cambia entre recargas de la
+     página, como el resto de CREDENCIALES_PERSONAL.
+     ========================================================================== */
+  var DIRECTORIO_APELLIDOS = ['garcia', 'rodriguez', 'vargas', 'soto', 'quispe', 'flores', 'ramos', 'castillo', 'medina', 'torres'];
+  var DIRECTORIO_PALABRAS_ROL = {
+    Administrador: ['operaciones', 'gestion', 'oficina', 'control', 'coordinacion', 'despacho', 'planilla', 'contable', 'logistica', 'administracion'],
+    Chofer: ['ruta.norte', 'ruta.sur', 'ruta.este', 'cisterna.uno', 'cisterna.dos', 'flota.a', 'flota.b', 'reparto', 'entrega', 'camion'],
+    Ayudante: ['tanque', 'manguera', 'apoyo.campo', 'campo', 'descarga', 'soporte', 'cuadrilla', 'obra', 'servicio', 'turno']
+  };
+  function capitalizarPalabra(s){
+    return s.split(/[.\s]+/).map(function(w){ return w.charAt(0).toUpperCase() + w.slice(1); }).join(' ');
+  }
+  // Hash simple y determinístico (no Math.random, para que el resultado sea siempre el mismo)
+  // — convierte el correo en 8 dígitos, rellenando con ceros a la izquierda si hace falta.
+  function passwordOchoDigitos(seed){
+    var h = 0;
+    for(var i = 0; i < seed.length; i++){ h = (h * 31 + seed.charCodeAt(i)) >>> 0; }
+    var s = String(h % 100000000);
+    while(s.length < 8) s = '0' + s;
+    return s;
+  }
+  function generarDirectorioCentral(){
+    var cuentas = [];
+    EMPRESAS.filter(function(e){ return !e.esSedeCentral; }).forEach(function(empresa){
+      var dominio = (empresa.id + '.pe').replace(/-/g, '');
+      ['Administrador', 'Chofer', 'Ayudante'].forEach(function(rol){
+        for(var i = 0; i < 10; i++){
+          var apellido = DIRECTORIO_APELLIDOS[i];
+          var palabra = DIRECTORIO_PALABRAS_ROL[rol][i];
+          // Alterna el orden ("palabra.apellido" / "apellido.palabra") para que las 150
+          // cuentas no luzcan todas con el mismo patrón — ej. "operaciones.garcia@..." y
+          // "soto.ruta.norte@..." conviven en la misma matriz.
+          var local = (i % 2 === 0) ? (palabra + '.' + apellido) : (apellido + '.' + palabra);
+          var email = local + '@' + dominio;
+          cuentas.push({
+            email: email, password: passwordOchoDigitos(email), rol: rol,
+            nombre: capitalizarPalabra(apellido) + ' ' + capitalizarPalabra(palabra),
+            empresaId: empresa.id, directorioCentral: true
+          });
+        }
+      });
+    });
+    return cuentas;
+  }
+  CREDENCIALES_PERSONAL = CREDENCIALES_PERSONAL.concat(generarDirectorioCentral());
+
   function buscarEmpresa(id){
     return EMPRESAS.find(function(e){ return e.id === id; }) || EMPRESAS[0];
+  }
+
+  /* ==========================================================================
+     Política de pagos configurable por empresa (Mi Perfil del Administrador, ver
+     renderConfigPagos()). Antes el sueldo de chofer/ayudante por viaje era fijo y
+     escalonado para TODAS las empresas (ver manoDeObra()) y la comisión de promotor era
+     un 5% fijo global (COMISION_ESTANDAR). Ahora cada empresa puede definir su propia
+     estructura: modalidad de pago a chofer/ayudante (sueldo fijo diario / pago fijo por
+     viaje / % por viaje) y si habilita o no comisión de promotor (y con qué modalidad).
+     Si una empresa nunca configuró nada, configPagosDe() devuelve un modo especial
+     "legado" que reproduce EXACTAMENTE el comportamiento de siempre — ninguna empresa
+     ve cambiar sus números ya mostrados sin que su Administrador toque este panel.
+     ========================================================================== */
+  var CONFIG_EMPRESAS_KEY = 'kunturmasha_config_empresas_v1';
+  function cargarConfigEmpresas(){
+    try{ var obj = JSON.parse(localStorage.getItem(CONFIG_EMPRESAS_KEY) || '{}'); return (obj && typeof obj === 'object') ? obj : {}; }
+    catch(e){ return {}; }
+  }
+  var configEmpresas = cargarConfigEmpresas();
+  function guardarConfigEmpresas(){
+    try{ localStorage.setItem(CONFIG_EMPRESAS_KEY, JSON.stringify(configEmpresas)); }catch(e){}
+    if(supaListo) empujarConfigEmpresa(empresaActivaId);
+  }
+  // "legado": sentinel interno (nunca aparece como opción en el <select>) que reproduce el
+  // sueldo escalonado de siempre (chofer S/.20/10, ayudante S/.10/5) y la comisión de
+  // promotor del 5% global — es lo que se usa mientras nadie haya guardado nada.
+  function configPagosPorDefecto(){
+    return {
+      choferModalidad: 'legado', choferMonto: 0,
+      ayudanteModalidad: 'legado', ayudanteMonto: 0,
+      promotorHabilitado: true, promotorModalidad: 'porcentaje_viaje', promotorMonto: COMISION_ESTANDAR * 100
+    };
+  }
+  function configPagosDe(empresaId){
+    var guardada = configEmpresas[empresaId];
+    return guardada ? Object.assign(configPagosPorDefecto(), guardada) : configPagosPorDefecto();
+  }
+  function guardarConfigPagos(empresaId, cfg){
+    configEmpresas[empresaId] = cfg;
+    guardarConfigEmpresas();
+    if(empresaId === empresaActivaId) actualizarUIPagosSegunEmpresa();
+  }
+  // ---- Sincronización con Supabase (config_empresas) — igual de "best-effort" que el resto
+  // de la app: si la tabla no existe todavía (no corrieron el supabase_schema.sql más
+  // reciente) o falla la red, la app sigue funcionando solo con localStorage, sin errores
+  // visibles para quien la usa. ----
+  function configARemoto(empresaId, cfg){
+    return {
+      empresa_id: empresaId,
+      chofer_modalidad: cfg.choferModalidad, chofer_monto: Number(cfg.choferMonto) || 0,
+      ayudante_modalidad: cfg.ayudanteModalidad, ayudante_monto: Number(cfg.ayudanteMonto) || 0,
+      promotor_habilitado: !!cfg.promotorHabilitado,
+      promotor_modalidad: cfg.promotorModalidad, promotor_monto: Number(cfg.promotorMonto) || 0
+    };
+  }
+  function configDesdeRemoto(r){
+    return {
+      choferModalidad: r.chofer_modalidad, choferMonto: r.chofer_monto,
+      ayudanteModalidad: r.ayudante_modalidad, ayudanteMonto: r.ayudante_monto,
+      promotorHabilitado: r.promotor_habilitado, promotorModalidad: r.promotor_modalidad, promotorMonto: r.promotor_monto
+    };
+  }
+  function empujarConfigEmpresa(empresaId){
+    if(!supa || !supaListo) return;
+    supa.from('config_empresas').upsert(configARemoto(empresaId, configPagosDe(empresaId)), { onConflict: 'empresa_id' })
+      .then(function(res){ if(res.error) console.warn('Supabase: no se pudo guardar config_empresas', res.error.message); })
+      .catch(function(err){ console.warn('Supabase: fallo de red al guardar config_empresas', err); });
+  }
+  // Se llama una vez al conectar con Supabase (ver iniciarSupabase()) — trae la política de
+  // pagos de cada empresa que ya la haya configurado desde otro dispositivo. Si esta empresa
+  // solo tiene configuración local todavía sin sincronizar, Supabase manda (se asume que la
+  // fila remota es la más reciente entre dispositivos, igual que pedidos/gastos).
+  function cargarConfigEmpresasRemoto(){
+    if(!supa) return;
+    supa.from('config_empresas').select('*').then(function(res){
+      if(res.error || !res.data) return; // tabla ausente u otro problema: se queda con lo local
+      res.data.forEach(function(fila){ configEmpresas[fila.empresa_id] = configDesdeRemoto(fila); });
+      try{ localStorage.setItem(CONFIG_EMPRESAS_KEY, JSON.stringify(configEmpresas)); }catch(e){}
+      actualizarUIPagosSegunEmpresa();
+      if(vistaActual === 'perfil') renderPerfil();
+    }).catch(function(){ /* sin red o tabla ausente: se queda con lo local */ });
+  }
+  var ETIQUETA_MODALIDAD_PAGO = { legado: 'según el sueldo escalonado de siempre', fijo_dia: 'sueldo fijo diario', fijo_viaje: 'pago fijo por viaje', porcentaje_viaje: 'porcentaje por viaje' };
+  function describirPago(modalidad, monto){
+    if(modalidad === 'fijo_dia') return 'S/. ' + (Number(monto) || 0).toFixed(2) + '/día';
+    if(modalidad === 'fijo_viaje') return 'S/. ' + (Number(monto) || 0).toFixed(2) + '/viaje';
+    if(modalidad === 'porcentaje_viaje') return (Number(monto) || 0) + '%/viaje';
+    return 'el escalonado de siempre (> S/.150: chofer S/.20 + ayudante S/.10 · resto: chofer S/.10 + ayudante S/.5)';
+  }
+  // Refleja en el formulario de Despacho la política de pagos de la empresa activa: el aviso
+  // de sueldo (dinámico según lo configurado, ver renderConfigPagos()) y si esta empresa
+  // deshabilitó promotores — en ese caso el campo "Conseguido por / Promotor" se oculta del
+  // todo (no solo se deja vacío) para que no se pueda elegir un promotor que no se le paga.
+  function actualizarUIPagosSegunEmpresa(){
+    var cfg = configPagosDe(empresaActivaId);
+    var notaMo = document.getElementById('notaManoDeObra');
+    if(notaMo){
+      notaMo.textContent = cfg.choferModalidad === 'legado' && cfg.ayudanteModalidad === 'legado'
+        ? 'Sueldo por viaje completado, según el precio acordado: más de S/. 150 → chofer S/. 20.00 + ayudante S/. 10.00 · S/. 150 o menos → chofer S/. 10.00 + ayudante S/. 5.00 — se calcula solo, no hace falta registrarlo en Gastos.'
+        : 'Sueldo configurado por esta empresa — chofer: ' + describirPago(cfg.choferModalidad, cfg.choferMonto) + ' · ayudante: ' + describirPago(cfg.ayudanteModalidad, cfg.ayudanteMonto) + '. Se calcula solo, no hace falta registrarlo en Gastos.';
+    }
+    var grupo = document.getElementById('groupConseguidoPor');
+    if(grupo) grupo.hidden = !cfg.promotorHabilitado;
+    var notaPromotor = document.getElementById('notaComisionPromotor');
+    if(notaPromotor && cfg.promotorHabilitado){
+      notaPromotor.textContent = 'Quién trajo a este cliente — al completarse el viaje, esa persona recibe ' + describirPago(cfg.promotorModalidad, cfg.promotorMonto) + ' en su "Mi Perfil / Billetera". Si lo registra un promotor con sesión iniciada, este campo se autocompleta solo (igual se puede cambiar).';
+    }
   }
   function cargarEmpresaActiva(){
     try{
@@ -1587,22 +1763,22 @@
   }
   var empresaActivaId = cargarEmpresaActiva();
 
-  function cargarNombreAfiliador(){
-    try{ return localStorage.getItem(AFILIADOR_NOMBRE_KEY) || ''; }catch(e){ return ''; }
+  function cargarNombrePromotor(){
+    try{ return localStorage.getItem(PROMOTOR_NOMBRE_KEY) || ''; }catch(e){ return ''; }
   }
-  var nombreAfiliador = cargarNombreAfiliador();
-  function guardarNombreAfiliador(n){
-    nombreAfiliador = n;
-    try{ localStorage.setItem(AFILIADOR_NOMBRE_KEY, n); }catch(e){}
+  var nombrePromotor = cargarNombrePromotor();
+  function guardarNombrePromotor(n){
+    nombrePromotor = n;
+    try{ localStorage.setItem(PROMOTOR_NOMBRE_KEY, n); }catch(e){}
   }
 
-  // Mapa { idDePedido: nombreDelAfiliador } — puramente local a este navegador. El login
-  // ahora es real (Supabase Auth) y el permiso para crear/editar pedidos como Afiliador
+  // Mapa { idDePedido: nombreDelPromotor } — puramente local a este navegador. El login
+  // ahora es real (Supabase Auth) y el permiso para crear/editar pedidos como Promotor
   // también (ver política "pedidos_insert_staff" en supabase_schema.sql), pero la tabla
   // pedidos en sí no tiene una columna para "quién lo afilió" — agregarla es un cambio de
-  // esquema fuera del alcance de este ajuste. Por eso "Mis Pedidos Afiliados" solo
+  // esquema fuera del alcance de este ajuste. Por eso "Mis Pedidos como Promotor" solo
   // reconoce lo registrado desde este mismo navegador, no desde cualquier dispositivo
-  // donde ese mismo afiliador haya iniciado sesión.
+  // donde ese mismo promotor haya iniciado sesión.
   function cargarAfiliaciones(){
     try{
       var raw = localStorage.getItem(AFILIACIONES_KEY);
@@ -1739,7 +1915,7 @@
       if(p.chofer === undefined) p.chofer = '';
       if(p.ayudante === undefined) p.ayudante = '';
       if(p.motivoCancelacion === undefined) p.motivoCancelacion = '';
-      if(p.afiliadorEmail === undefined) p.afiliadorEmail = '';
+      if(p.promotorEmail === undefined) p.promotorEmail = '';
       if(p.telefono === undefined) p.telefono = '';
       if(p.empresaId === undefined) p.empresaId = 'kunturmasha';
       if(p.volumenM3 === undefined) p.volumenM3 = 0;
@@ -1867,11 +2043,11 @@
       nombres.map(function(n){ return '<option value="' + escapeHtml(n) + '">' + escapeHtml(n) + '</option>'; }).join('');
   }
   poblarSelectChofer();
-  // "Conseguido por / Afiliador" se llena desde PERSONAS (no texto libre) para que sus
+  // "Conseguido por / Promotor" se llena desde PERSONAS (no texto libre) para que sus
   // valores calcen siempre con lo que usa el cálculo de comisiones — todo el personal puede
-  // figurar ahí (Administradores y Choferes incluidos, no solo Afiliadores), sin importar
+  // figurar ahí (Administradores y Choferes incluidos, no solo Promotores), sin importar
   // qué empresa esté activa (es la red de promotores de toda la plataforma).
-  els.conseguidoPor.innerHTML = '<option value="">— Cliente directo (sin afiliador) —</option>' +
+  els.conseguidoPor.innerHTML = '<option value="">— Cliente directo (sin promotor) —</option>' +
     PERSONAS.map(function(pe){ return '<option value="' + escapeHtml(pe.id) + '">' + escapeHtml(pe.nombre) + '</option>'; }).join('');
 
   var empresaSelectorEl = document.getElementById('empresaSelector');
@@ -1893,6 +2069,7 @@
       els.filterGroup.querySelectorAll('.filter-btn').forEach(function(b){ b.classList.toggle('active', b.dataset.estado === 'Todos'); });
     }
     poblarSelectChofer();
+    actualizarUIPagosSegunEmpresa();
     renderTodo();
     if(vistaActual === 'contabilidad') renderContabilidad();
     if(vistaActual === 'ayudante') renderAyudante();
@@ -2126,7 +2303,7 @@
 
     // Las cifras de negocio (cobrado / por cobrar) son "reportes financieros" — el rol
     // "cliente" no debe verlas; el rol "chofer" ve su propio pago en vez del ingreso total
-    // de la empresa. Solo "admin" (y de forma implícita "afiliador", que no usa esta vista)
+    // de la empresa. Solo "admin" (y de forma implícita "promotor", que no usa esta vista)
     // ve el desglose completo.
     var tiles;
     if(rolActivo === 'cliente'){
@@ -2137,7 +2314,13 @@
         { label: 'Cancelados / retirados', value: fallidos, cls: fallidos ? 'bad' : '' }
       ];
     } else if(rolActivo === 'chofer'){
-      var pagoChofer = completados.reduce(function(s,p){ return s + manoDeObra(p.precio).chofer; }, 0);
+      var pagoChofer = completados.reduce(function(s,p){ return s + manoDeObra(p.precio, p.empresaId).chofer; }, 0);
+      // "fijo_dia": se paga una sola vez por día trabajado, no por viaje (ver manoDeObra(),
+      // que ya devuelve 0 por viaje en esa modalidad) — se suma aparte si hubo al menos un
+      // viaje completado hoy para la empresa activa.
+      if(completados.length && configPagosDe(empresaActivaId).choferModalidad === 'fijo_dia'){
+        pagoChofer += Number(configPagosDe(empresaActivaId).choferMonto) || 0;
+      }
       tiles = [
         { label: 'Pedidos del día', value: delDia.length },
         { label: 'En curso (agenda)', value: abiertos.length },
@@ -2555,7 +2738,7 @@
     els.precio.value = p.precio;
     els.chofer.value = p.chofer || '';
     els.ayudante.value = p.ayudante || '';
-    els.conseguidoPor.value = resolverPersonaId(p.afiliadorEmail);
+    els.conseguidoPor.value = resolverPersonaId(p.promotorEmail);
     document.getElementById('volumenM3').value = p.volumenM3 || '';
     document.getElementById('metodoPago').value = p.metodoPago || 'Efectivo';
     els.tipoAlmacen.value = p.tipoAlmacen;
@@ -2579,10 +2762,10 @@
     document.getElementById('clienteCodigoNota').hidden = true;
     limpiarChipsUbicacion();
     togglePiso();
-    // Autocompleta "Conseguido por" con la propia cuenta si quien registra es un afiliador
+    // Autocompleta "Conseguido por" con la propia cuenta si quien registra es un promotor
     // con sesión iniciada — visible desde ya en el formulario, no solo al guardar (ver
     // también el mismo fallback en el submit, por si esto no llegó a correr).
-    if(rolActivo === 'afiliador' && usuarioActual){
+    if(rolActivo === 'promotor' && usuarioActual){
       var personaPropia = personaDeCredencial(buscarCredencial(usuarioActual.email));
       if(personaPropia) els.conseguidoPor.value = personaPropia.id;
     }
@@ -2624,9 +2807,9 @@
       chofer: els.chofer.value.trim(),
       ayudante: els.ayudante.value.trim(),
       // "Conseguido por" manda si alguien lo eligió a mano; si se deja en blanco y quien
-      // registra el pedido tiene sesión de Afiliador, se autocompleta con esa cuenta (mismo
+      // registra el pedido tiene sesión de Promotor, se autocompleta con esa cuenta (mismo
       // comportamiento que antes) — así nadie deja de llevarse su comisión por descuido.
-      afiliadorEmail: els.conseguidoPor.value || ((rolActivo === 'afiliador' && usuarioActual) ? (personaDeCredencial(buscarCredencial(usuarioActual.email)) || {}).id || '' : ''),
+      promotorEmail: els.conseguidoPor.value || ((rolActivo === 'promotor' && usuarioActual) ? (personaDeCredencial(buscarCredencial(usuarioActual.email)) || {}).id || '' : ''),
       empresaId: empresaActivaId,
       tipoAlmacen: tipo,
       piso: tipo === 'Tanque Elevado' ? document.getElementById('piso').value : '-',
@@ -2666,8 +2849,8 @@
       datos.tiempos = tiemposVacios();
       datos.orden = siguienteOrden(datos.fecha);
       pedidos.push(datos);
-      if(rolActivo === 'afiliador' && nombreAfiliador){
-        afiliaciones[datos.id] = nombreAfiliador;
+      if(rolActivo === 'promotor' && nombrePromotor){
+        afiliaciones[datos.id] = nombrePromotor;
         guardarAfiliaciones();
       }
     }
@@ -2676,7 +2859,7 @@
     guardarPedidos();
     cancelarEdicion();
     seleccionarFecha(fechaDestino);
-    // Ir siempre a "agenda" tras guardar daba un callejón sin salida al rol "afiliador"
+    // Ir siempre a "agenda" tras guardar daba un callejón sin salida al rol "promotor"
     // (que no tiene esa vista habilitada): se queda en su vista principal (para él,
     // "agendar" — listo para registrar el siguiente pedido); el resto de roles, que sí
     // tienen "agenda" habilitada, se comportan exactamente igual que antes.
@@ -2897,21 +3080,21 @@
     // Copiar/reemplazar TODOS los pedidos es una acción de administración — no para "cliente".
     document.getElementById('btnBackup').hidden = rolActivo === 'cliente';
     // El switch de empresa (marketplace multiempresa) es un control de simulación para
-    // Administradores — Chofer/Afiliador ya pertenecen a una sola empresa implícitamente,
+    // Administradores — Chofer/Promotor ya pertenecen a una sola empresa implícitamente,
     // y Cliente no administra ninguna.
     document.getElementById('empresaSwitch').hidden = rolActivo !== 'admin';
   }
 
-  function actualizarAfiliadorUI(){
-    var esAfiliador = rolActivo === 'afiliador';
-    document.getElementById('afiliadorBar').hidden = !esAfiliador;
-    if(esAfiliador){
+  function actualizarPromotorUI(){
+    var esPromotor = rolActivo === 'promotor';
+    document.getElementById('promotorBar').hidden = !esPromotor;
+    if(esPromotor){
       // Con login real ya sabemos quién es (usuarioActual.email) — se usa como nombre de
-      // afiliador por defecto en vez de pedirlo a mano, aunque la persona lo puede editar.
-      if(!nombreAfiliador && usuarioActual && usuarioActual.email){
-        guardarNombreAfiliador(usuarioActual.email);
+      // promotor por defecto en vez de pedirlo a mano, aunque la persona lo puede editar.
+      if(!nombrePromotor && usuarioActual && usuarioActual.email){
+        guardarNombrePromotor(usuarioActual.email);
       }
-      document.getElementById('afiliadorNombreInput').value = nombreAfiliador;
+      document.getElementById('promotorNombreInput').value = nombrePromotor;
       renderAfiliados();
     }
   }
@@ -2920,7 +3103,7 @@
     if(!VISTAS_POR_ROL[nuevoRol]) return;
     guardarRol(nuevoRol);
     actualizarTabsPorRol();
-    actualizarAfiliadorUI();
+    actualizarPromotorUI();
     var permitidas = VISTAS_POR_ROL[rolActivo].tabs;
     if(permitidas.indexOf(vistaActual) === -1){
       irAVista(VISTAS_POR_ROL[rolActivo].defaultView);
@@ -2932,31 +3115,31 @@
     }
   }
 
-  /* ---------- Formulario del afiliador: nombre y "Mis Pedidos Afiliados" ---------- */
-  document.getElementById('afiliadorNombreInput').addEventListener('input', function(){
-    guardarNombreAfiliador(this.value.trim());
-    if(document.querySelector('.afiliador-sub .sub-tab[data-afiliadorsub="mios"]').classList.contains('active')){
+  /* ---------- Formulario del promotor: nombre y "Mis Pedidos como Promotor" ---------- */
+  document.getElementById('promotorNombreInput').addEventListener('input', function(){
+    guardarNombrePromotor(this.value.trim());
+    if(document.querySelector('.promotor-sub .sub-tab[data-promotorsub="mios"]').classList.contains('active')){
       renderAfiliados();
     }
   });
 
-  document.getElementById('afiliadorSub').addEventListener('click', function(e){
+  document.getElementById('promotorSub').addEventListener('click', function(e){
     var btn = e.target.closest('.sub-tab');
     if(!btn) return;
-    document.querySelectorAll('#afiliadorSub .sub-tab').forEach(function(b){ b.classList.toggle('active', b === btn); });
-    var esMios = btn.dataset.afiliadorsub === 'mios';
-    document.getElementById('afiliadorFormWrap').hidden = esMios;
+    document.querySelectorAll('#promotorSub .sub-tab').forEach(function(b){ b.classList.toggle('active', b === btn); });
+    var esMios = btn.dataset.promotorsub === 'mios';
+    document.getElementById('promotorFormWrap').hidden = esMios;
     document.getElementById('afiliadosLista').hidden = !esMios;
     if(esMios) renderAfiliados();
   });
 
   function renderAfiliados(){
     var cont = document.getElementById('afiliadosLista');
-    if(!nombreAfiliador){
+    if(!nombrePromotor){
       cont.innerHTML = '<div class="empty-state">Escribe tu nombre arriba para ver los pedidos que registraste.</div>';
       return;
     }
-    var propios = pedidos.filter(function(p){ return afiliaciones[p.id] === nombreAfiliador; });
+    var propios = pedidos.filter(function(p){ return afiliaciones[p.id] === nombrePromotor; });
     if(propios.length === 0){
       cont.innerHTML = '<div class="empty-state">Aún no registraste ningún pedido con este nombre.</div>';
       return;
@@ -3098,7 +3281,7 @@
       if(p.estado === 'Completado'){
         entradas.push({ fecha:p.fecha, glosa:'Venta de servicio (cobrado) — ' + glosaCliente, cuenta:'10', debe:Number(p.precio)||0, haber:0 });
         entradas.push({ fecha:p.fecha, glosa:'Venta de servicio (cobrado) — ' + glosaCliente, cuenta:'70', debe:0, haber:Number(p.precio)||0 });
-        var mo = manoDeObra(p.precio);
+        var mo = manoDeObra(p.precio, p.empresaId);
         var totalSueldo = mo.chofer + mo.ayudante;
         var quienes = [p.chofer, p.ayudante].filter(Boolean).join(' / ');
         var detalleSueldo = 'chofer S/.' + mo.chofer.toFixed(2) + ' + ayudante S/.' + mo.ayudante.toFixed(2);
@@ -3109,6 +3292,21 @@
         entradas.push({ fecha:p.fecha, glosa:'Venta de servicio (por cobrar) — ' + glosaCliente, cuenta:'70', debe:0, haber:Number(p.precio)||0 });
       }
     });
+    // Sueldo fijo diario de chofer/ayudante (modalidad "fijo_dia", ver configPagosDe()): se
+    // paga una sola vez por día con al menos un viaje completado de ESTA empresa (todos los
+    // pedidos que llegan aquí ya vienen filtrados a empresaActivaId, ver pedidosDelPeriodo()),
+    // no una vez por viaje — por eso queda fuera del forEach de arriba, agrupado por fecha.
+    var cfgAsientos = configPagosDe(empresaActivaId);
+    if(cfgAsientos.choferModalidad === 'fijo_dia' || cfgAsientos.ayudanteModalidad === 'fijo_dia'){
+      var diasCompletados = Array.from(new Set(listaPedidos.filter(function(p){ return p.estado === 'Completado'; }).map(function(p){ return p.fecha; })));
+      diasCompletados.forEach(function(fecha){
+        var totalFijo = (cfgAsientos.choferModalidad === 'fijo_dia' ? Number(cfgAsientos.choferMonto) || 0 : 0) +
+                        (cfgAsientos.ayudanteModalidad === 'fijo_dia' ? Number(cfgAsientos.ayudanteMonto) || 0 : 0);
+        if(totalFijo <= 0) return;
+        entradas.push({ fecha:fecha, glosa:'Sueldo fijo diario (chofer/ayudante) — ' + fecha, cuenta:'62', debe:totalFijo, haber:0 });
+        entradas.push({ fecha:fecha, glosa:'Sueldo fijo diario (chofer/ayudante) — ' + fecha, cuenta:'10', debe:0, haber:totalFijo });
+      });
+    }
     listaGastos.forEach(function(g){
       var cuenta = CATEGORIA_CUENTA[g.categoria] || '65';
       var glosa = g.categoria + (g.descripcion ? ' — ' + g.descripcion : '') + ' (' + g.id + ')';
@@ -3570,7 +3768,7 @@
       piso: p.piso != null ? String(p.piso) : '-', dificultad: p.dificultad || '', manguera: p.manguera || '',
       notas: p.notas || '', estado: p.estado || '', motivo_cancelacion: p.motivoCancelacion || '',
       tiempos: Array.isArray(p.tiempos) ? p.tiempos : tiemposVacios(),
-      afiliador_email: p.afiliadorEmail || '', telefono: p.telefono || '',
+      promotor_email: p.promotorEmail || '', telefono: p.telefono || '',
       empresa_id: p.empresaId || 'kunturmasha',
       // Number(...) || 0 en vez de "p.volumenM3 || null": un volumen de 0 (o un valor no
       // numérico) es válido y debe llegar como número, nunca como null — Supabase no debe
@@ -3584,7 +3782,7 @@
       ubicacion: r.ubicacion, horaInicio: r.hora_inicio, horaFin: r.hora_fin, precio: r.precio,
       chofer: r.chofer, ayudante: r.ayudante, tipoAlmacen: r.tipo_almacen, piso: r.piso,
       dificultad: r.dificultad, manguera: r.manguera, notas: r.notas, estado: r.estado,
-      motivoCancelacion: r.motivo_cancelacion, tiempos: r.tiempos, afiliadorEmail: r.afiliador_email || '',
+      motivoCancelacion: r.motivo_cancelacion, tiempos: r.tiempos, promotorEmail: r.promotor_email || '',
       telefono: r.telefono || '', empresaId: r.empresa_id || 'kunturmasha',
       volumenM3: r.volumen_m3 || 0, metodoPago: r.metodo_pago || ''
     };
@@ -3765,6 +3963,7 @@
       suscribirRealtime();
       actualizarIndicadorSupabase(true);
       renderTodo();
+      cargarConfigEmpresasRemoto(); // best-effort: si la tabla config_empresas no existe todavía, no rompe nada de lo anterior
     }catch(err){
       console.warn('Supabase: no se pudo conectar; la app sigue funcionando en modo local.', err);
       // OJO: a propósito NO se pone `supa = null` aquí — ese mismo cliente lo sigue usando
@@ -3933,7 +4132,7 @@
       chofer: '', ayudante: '', tipoAlmacen: solicitud.tipoDescarga || '', piso: solicitud.piso || '-', dificultad: '',
       manguera: solicitud.mangueraMetros ? (solicitud.mangueraMetros >= 50 ? '50m+' : solicitud.mangueraMetros + 'm') : '',
       notas: 'Adjudicado por el Hub Central (subasta ' + solicitud.id + ', ' + solicitud.volumenM3 + ' m³) — tiempo de entrega ofertado: ' + ganadora.tiempoEntregaMin + ' min.',
-      estado: 'Programado', motivoCancelacion: '', tiempos: tiemposVacios(), afiliadorEmail: '', empresaId: empresaGanadora.id
+      estado: 'Programado', motivoCancelacion: '', tiempos: tiemposVacios(), promotorEmail: '', empresaId: empresaGanadora.id
     };
     pedidos = migrarPedidos(pedidos.concat([nuevoPedido]));
     guardarPedidos();
@@ -4314,12 +4513,12 @@
      las políticas RLS de pedidos/gastos ya no exigen auth.uid() (ver
      supabase_schema.sql, sección "acceso abierto").
      ========================================================================== */
-  var MAPA_ROL_DB_A_INTERNO = { Administrador: 'admin', Chofer: 'chofer', Afiliador: 'afiliador', Cliente: 'cliente', Ayudante: 'ayudante' };
-  var ROL_PILL_CLASE = { Administrador: 'rol-admin', Chofer: 'rol-chofer', Afiliador: 'rol-afiliador', Cliente: 'rol-cliente', Ayudante: 'rol-ayudante' };
+  var MAPA_ROL_DB_A_INTERNO = { Administrador: 'admin', Chofer: 'chofer', Promotor: 'promotor', Cliente: 'cliente', Ayudante: 'ayudante' };
+  var ROL_PILL_CLASE = { Administrador: 'rol-admin', Chofer: 'rol-chofer', Promotor: 'rol-promotor', Cliente: 'rol-cliente', Ayudante: 'rol-ayudante' };
   // Inverso de MAPA_ROL_DB_A_INTERNO — para mostrar la etiqueta/pill correcta cuando el rol
   // activo cambia por el selector rápido de rol (cambiarRolActivo()), sin volver a loguearse.
-  var INTERNO_A_ROL_DB = { admin: 'Administrador', chofer: 'Chofer', afiliador: 'Afiliador', cliente: 'Cliente', ayudante: 'Ayudante' };
-  var ETIQUETA_ROL_INTERNO = { admin: '👔 Administrador', chofer: '🚚 Chofer', afiliador: '🤝 Afiliador / Promotor', ayudante: '🧰 Ayudante', cliente: '👤 Cliente' };
+  var INTERNO_A_ROL_DB = { admin: 'Administrador', chofer: 'Chofer', promotor: 'Promotor', cliente: 'Cliente', ayudante: 'Ayudante' };
+  var ETIQUETA_ROL_INTERNO = { admin: '👔 Administrador', chofer: '🚚 Chofer', promotor: '🤝 Promotor comisionista', ayudante: '🧰 Ayudante', cliente: '👤 Cliente' };
   // Roles que una credencial puede usar sin volver a loguearse (multi-rol dinámico, ver
   // cambiarRolActivo() y actualizarSelectorRol()). Si una cuenta no trae "roles", se
   // comporta igual que siempre: un único rol fijo, el de cred.rol.
@@ -4328,7 +4527,7 @@
     return cred ? [MAPA_ROL_DB_A_INTERNO[cred.rol] || 'cliente'] : ['cliente'];
   }
   var usuarioActual = null;   // { email, nombre } de la credencial que inició sesión, o null si nadie del personal entró
-  var rolDbActual = null;     // 'Administrador' | 'Chofer' | 'Afiliador' | null (sin sesión de personal)
+  var rolDbActual = null;     // 'Administrador' | 'Chofer' | 'Promotor' | null (sin sesión de personal)
 
   function actualizarSesionUI(){
     var logueado = !!usuarioActual;
@@ -4423,9 +4622,9 @@
     actualizarSesionUI();
     actualizarSelectorEmpresa();
     irAVista(VISTAS_POR_ROL[interno].defaultView);
-    // Ver la misma lógica en cancelarEdicion(): si quien entra es un afiliador, su propia
+    // Ver la misma lógica en cancelarEdicion(): si quien entra es un promotor, su propia
     // persona ya aparece elegida en "Conseguido por" desde el primer vistazo al formulario.
-    if(interno === 'afiliador'){
+    if(interno === 'promotor'){
       var personaCred = personaDeCredencial(cred);
       if(personaCred) els.conseguidoPor.value = personaCred.id;
     }
@@ -4557,15 +4756,86 @@
   });
 
   /* ---------- Ajustes: cuenta propia + lista fija de personal ---------- */
+  // La lista de cuentas del personal (correo + contraseña) ya no se muestra en el perfil de
+  // administradores normales — cada empresa solo administra la suya, no ve las credenciales
+  // de las demás. Únicamente piero@digimarkspace.pe (cuenta maestra) ve aquí el "Directorio
+  // Central de Accesos" con las 150 cuentas generadas (ver generarDirectorioCentral()).
+  var PIERO_SUPERADMIN_EMAIL = 'piero@digimarkspace.pe';
   function renderAjustes(){
-    var tbody = document.getElementById('tbodyUsuarios');
-    tbody.innerHTML = CREDENCIALES_PERSONAL.map(function(c){
+    var wrap = document.getElementById('ajustesPersonalWrap');
+    if(!wrap) return;
+    var esPiero = !!(usuarioActual && usuarioActual.email === PIERO_SUPERADMIN_EMAIL);
+    if(!esPiero){
+      wrap.innerHTML = '';
+      wrap.dataset.montado = '';
+      return;
+    }
+    if(wrap.dataset.montado !== '1'){
+      var opcionesEmpresa = EMPRESAS.filter(function(e){ return !e.esSedeCentral; })
+        .map(function(e){ return '<option value="' + e.id + '">' + escapeHtml(e.nombre) + '</option>'; }).join('');
+      wrap.innerHTML =
+        '<div class="panel">' +
+          '<h2>🔐 Directorio Central de Accesos</h2>' +
+          '<p style="font-size:0.8rem; color:var(--muted); margin:0 0 12px;">150 cuentas de prueba (Administrador, Chofer y Ayudante — 10 de cada una) repartidas en las 5 empresas asociadas. Visible solo para esta cuenta maestra. Copia una fila para entregarle sus credenciales a esa empresa.</p>' +
+          '<div class="form-row">' +
+            '<div class="form-group"><label>Buscar (nombre o correo)</label><input type="search" id="dcBuscar" placeholder="Ej: garcia, ruta.norte, tanque..."></div>' +
+            '<div class="form-group"><label>Empresa</label><select id="dcEmpresa"><option value="">Todas las empresas</option>' + opcionesEmpresa + '</select></div>' +
+            '<div class="form-group"><label>Rol</label><select id="dcRol"><option value="">Todos los roles</option><option value="Administrador">Administrador</option><option value="Chofer">Chofer</option><option value="Ayudante">Ayudante</option></select></div>' +
+          '</div>' +
+          '<p class="campo-nota" id="dcContador"></p>' +
+          '<div class="tabla-wrap"><table class="tabla-registro"><thead><tr><th>Nombre</th><th>Empresa</th><th>Rol</th><th>Correo</th><th>Contraseña</th><th></th></tr></thead><tbody id="dcTbody"></tbody></table></div>' +
+        '</div>';
+      wrap.dataset.montado = '1';
+      document.getElementById('dcBuscar').addEventListener('input', debounce(renderDirectorioCentralFiltrado, 150));
+      document.getElementById('dcEmpresa').addEventListener('change', renderDirectorioCentralFiltrado);
+      document.getElementById('dcRol').addEventListener('change', renderDirectorioCentralFiltrado);
+      // Delegado en el tbody (se repinta con innerHTML en cada filtro) — copia "correo /
+      // contraseña" al portapapeles; si el navegador no soporta el Clipboard API (ej. sin
+      // HTTPS), cae a un alert con el texto para copiar a mano.
+      document.getElementById('dcTbody').addEventListener('click', function(e){
+        var btn = e.target.closest('.btn-copiar-credencial');
+        if(!btn) return;
+        var texto = btn.dataset.email + ' / ' + btn.dataset.password;
+        if(navigator.clipboard && navigator.clipboard.writeText){
+          navigator.clipboard.writeText(texto).then(function(){
+            var original = btn.textContent;
+            btn.textContent = '✅ Copiado';
+            setTimeout(function(){ btn.textContent = original; }, 1200);
+          }).catch(function(){ alert('No se pudo copiar automáticamente. Credenciales: ' + texto); });
+        } else {
+          alert('Credenciales: ' + texto);
+        }
+      });
+    }
+    renderDirectorioCentralFiltrado();
+  }
+  // Repinta solo la tabla de resultados del Directorio Central según los filtros activos —
+  // separado de renderAjustes() para no reconstruir los controles (y perder el foco de
+  // búsqueda) en cada tecla.
+  function renderDirectorioCentralFiltrado(){
+    var tbody = document.getElementById('dcTbody');
+    if(!tbody) return;
+    var termino = (document.getElementById('dcBuscar').value || '').trim().toLowerCase();
+    var empresaFiltro = document.getElementById('dcEmpresa').value;
+    var rolFiltro = document.getElementById('dcRol').value;
+    var filas = CREDENCIALES_PERSONAL.filter(function(c){
+      if(!c.directorioCentral) return false;
+      if(empresaFiltro && c.empresaId !== empresaFiltro) return false;
+      if(rolFiltro && c.rol !== rolFiltro) return false;
+      if(termino && c.email.toLowerCase().indexOf(termino) === -1 && c.nombre.toLowerCase().indexOf(termino) === -1) return false;
+      return true;
+    });
+    document.getElementById('dcContador').textContent = filas.length + ' de 150 cuentas.';
+    tbody.innerHTML = filas.map(function(c){
       return '<tr>' +
-        '<td>' + escapeHtml(nombreMostrado(c)) + '</td>' +
-        '<td>' + escapeHtml(c.email) + '</td>' +
-        '<td><span class="rol-pill ' + (ROL_PILL_CLASE[c.rol] || '') + '">' + escapeHtml(c.rol) + '</span></td>' +
+          '<td>' + escapeHtml(c.nombre) + '</td>' +
+          '<td>' + escapeHtml(buscarEmpresa(c.empresaId).nombre) + '</td>' +
+          '<td><span class="rol-pill ' + (ROL_PILL_CLASE[c.rol] || '') + '">' + escapeHtml(c.rol) + '</span></td>' +
+          '<td class="mono">' + escapeHtml(c.email) + '</td>' +
+          '<td class="mono">' + escapeHtml(c.password) + '</td>' +
+          '<td><button type="button" class="btn-ghost btn-copiar-credencial" data-email="' + escapeHtml(c.email) + '" data-password="' + escapeHtml(c.password) + '" style="font-size:0.68rem; padding:4px 8px;">📋 Copiar</button></td>' +
         '</tr>';
-    }).join('');
+    }).join('') || '<tr><td colspan="6" style="text-align:center; color:var(--muted);">Sin resultados para este filtro.</td></tr>';
   }
 
   /* ---------- Cotizar (público, sin sesión) ----------
@@ -4580,9 +4850,37 @@
   // (pedidos.chofer) es exactamente cred.nombre, más cualquier ajuste manual de
   // AJUSTES_HISTORICOS para su correo (ej. saldo arrastrado de antes de este sistema). Un
   // ajuste manual también cuenta como día trabajado, igual que un viaje real.
+  // Cuánto ve el CHOFER en su propia "Mi Perfil / Billetera" por un viaje — sigue la misma
+  // política configurada por su empresa (ver configPagosDe()), pero con un "legado" propio
+  // (5% del precio) distinto al de manoDeObra() (escalonado 20/10): son dos vistas que ya
+  // convivían con números distintos antes de este cambio (billetera personal vs. gasto de
+  // planilla en Contabilidad), así que una empresa que no configura nada no ve mover ninguna
+  // de las dos. En cuanto la empresa SÍ configura una modalidad real, ambas la siguen igual.
+  function pagoChoferPorViaje(p){
+    var cfg = configPagosDe(p.empresaId || 'kunturmasha');
+    var precio = Number(p.precio) || 0;
+    if(cfg.choferModalidad === 'porcentaje_viaje') return precio * ((Number(cfg.choferMonto) || 0) / 100);
+    if(cfg.choferModalidad === 'fijo_viaje') return Number(cfg.choferMonto) || 0;
+    if(cfg.choferModalidad === 'fijo_dia') return 0;
+    return precio * COMISION_ESTANDAR; // 'legado'
+  }
   function calcularComisionesChofer(cred){
-    var completados = pedidos.filter(function(p){ return p.estado === 'Completado' && p.chofer === cred.nombre; });
-    var movsViajes = completados.map(function(p){ return { fecha: p.fecha, concepto: 'Viaje — ' + (p.cliente || p.id), monto: (Number(p.precio) || 0) * COMISION_ESTANDAR }; });
+    // Bug corregido: además del nombre exacto, exige la misma empresa que la credencial —
+    // sin esto, dos choferes de empresas distintas con el mismo nombre (posible con el
+    // Directorio Central de 150 cuentas, ver generarDirectorioCentral()) mezclarían sus
+    // comisiones entre sí.
+    var completados = pedidos.filter(function(p){ return p.estado === 'Completado' && p.chofer === cred.nombre && (p.empresaId || 'kunturmasha') === (cred.empresaId || 'kunturmasha'); });
+    var movsViajes = completados.map(function(p){ return { fecha: p.fecha, concepto: 'Viaje — ' + (p.cliente || p.id), monto: pagoChoferPorViaje(p) }; }).filter(function(m){ return m.monto > 0; });
+    var diasFijoVistos = {};
+    completados.forEach(function(p){
+      var empresaId = p.empresaId || 'kunturmasha';
+      var cfg = configPagosDe(empresaId);
+      if(cfg.choferModalidad !== 'fijo_dia') return;
+      var clave = empresaId + '|' + p.fecha;
+      if(diasFijoVistos[clave]) return;
+      diasFijoVistos[clave] = true;
+      movsViajes.push({ fecha: p.fecha, concepto: 'Sueldo fijo diario — ' + p.fecha, monto: Number(cfg.choferMonto) || 0 });
+    });
     var ajustes = AJUSTES_HISTORICOS.filter(function(a){ return a.email === cred.email && a.tipo === 'chofer'; });
     var movsAjustes = ajustes.map(function(a){ return { fecha: a.fecha, concepto: a.concepto || 'Ajuste manual', monto: a.monto }; });
     var movimientos = movsViajes.concat(movsAjustes).sort(function(x, y){ return y.fecha.localeCompare(x.fecha); });
@@ -4592,14 +4890,37 @@
   }
 
   // Comisión de promotor (5%) de una PERSONA (no de una cuenta puntual) — identificada por
-  // pedidos.afiliadorEmail, que llena el campo "Conseguido por / Afiliador" del formulario de
+  // pedidos.promotorEmail, que llena el campo "Conseguido por / Promotor" del formulario de
   // Despacho. Cualquiera del personal puede aparecer ahí (Administradores y Choferes
-  // incluidos, no solo Afiliadores) — por eso se calcula sobre PERSONAS/perteneceAPersona(),
+  // incluidos, no solo Promotores) — por eso se calcula sobre PERSONAS/perteneceAPersona(),
   // que junta las cuentas de una misma persona (ej. Piero: admin1 + chofer1) en una sola
   // billetera de promotor, sin importar con cuál haya iniciado sesión quien consulta.
+  // Comisión de promotor por UN pedido, según la política de la empresa dueña de ese pedido
+  // (ver configPagosDe()) — 0 si esa empresa deshabilitó promotores, sin importar quién lo
+  // haya conseguido. "fijo_dia" devuelve 0 aquí: se agrega una sola vez por día más abajo.
+  function comisionPromotorDePedido(p){
+    var cfg = configPagosDe(p.empresaId || 'kunturmasha');
+    if(!cfg.promotorHabilitado) return 0;
+    var precio = Number(p.precio) || 0;
+    if(cfg.promotorModalidad === 'fijo_viaje') return Number(cfg.promotorMonto) || 0;
+    if(cfg.promotorModalidad === 'fijo_dia') return 0;
+    return precio * ((Number(cfg.promotorMonto) || 0) / 100); // 'porcentaje_viaje' (y default)
+  }
   function calcularComisionesPromotor(persona){
-    var completados = pedidos.filter(function(p){ return p.estado === 'Completado' && perteneceAPersona(p.afiliadorEmail, persona); });
-    var movsViajes = completados.map(function(p){ return { fecha: p.fecha, concepto: 'Pedido — ' + (p.cliente || p.id), monto: (Number(p.precio) || 0) * COMISION_ESTANDAR }; });
+    var completados = pedidos.filter(function(p){ return p.estado === 'Completado' && perteneceAPersona(p.promotorEmail, persona); });
+    var movsViajes = completados.map(function(p){ return { fecha: p.fecha, concepto: 'Pedido — ' + (p.cliente || p.id), monto: comisionPromotorDePedido(p) }; }).filter(function(m){ return m.monto > 0; });
+    // "fijo_dia": una sola vez por cada (empresa, día) con al menos un pedido completado de
+    // esta persona, si esa empresa habilitó promotores con esa modalidad.
+    var diasFijoVistos = {};
+    completados.forEach(function(p){
+      var empresaId = p.empresaId || 'kunturmasha';
+      var cfg = configPagosDe(empresaId);
+      if(!cfg.promotorHabilitado || cfg.promotorModalidad !== 'fijo_dia') return;
+      var clave = empresaId + '|' + p.fecha;
+      if(diasFijoVistos[clave]) return;
+      diasFijoVistos[clave] = true;
+      movsViajes.push({ fecha: p.fecha, concepto: 'Sueldo fijo diario de promotor — ' + p.fecha, monto: Number(cfg.promotorMonto) || 0 });
+    });
     var ajustes = AJUSTES_HISTORICOS.filter(function(a){ return persona.emails.indexOf(a.email) !== -1 && a.tipo === 'promotor'; });
     var movsAjustes = ajustes.map(function(a){ return { fecha: a.fecha, concepto: a.concepto || 'Ajuste manual', monto: a.monto }; });
     var movimientos = movsViajes.concat(movsAjustes).sort(function(x, y){ return y.fecha.localeCompare(x.fecha); });
@@ -4614,6 +4935,80 @@
       return '<tr><td>' + escapeHtml(m.fecha) + '</td><td>' + escapeHtml(m.concepto) + '</td><td class="num">' + formatMoneda(m.monto) + '</td></tr>';
     }).join('');
     return '<div class="tabla-wrap"><table class="tabla-registro"><thead><tr><th>Fecha</th><th>Concepto</th><th class="num">Monto</th></tr></thead><tbody>' + filas + '</tbody></table></div>';
+  }
+
+  // Panel "Política de pagos" — cada Administrador de empresa define aquí cómo se le paga a
+  // chofer, ayudante y promotor (ver configPagosDe()/guardarConfigPagos()). El <select> de
+  // chofer/ayudante trae una opción temporal "Aún no configurado" SOLO mientras la empresa
+  // sigue en modo "legado" (nunca guardó nada) — desaparece en cuanto se guarda una modalidad
+  // real, porque configPagosDe() ya no devuelve 'legado' para esa empresa nunca más.
+  var OPCIONES_MODALIDAD_PAGO = [
+    { value: 'fijo_dia', label: 'Sueldo fijo diario (S/.)' },
+    { value: 'fijo_viaje', label: 'Pago fijo por viaje (S/.)' },
+    { value: 'porcentaje_viaje', label: 'Porcentaje por viaje (%)' }
+  ];
+  var OPCIONES_MODALIDAD_PROMOTOR = [
+    { value: 'fijo_dia', label: 'Monto fijo diario (S/.)' },
+    { value: 'fijo_viaje', label: 'Monto fijo por viaje conseguido (S/.)' },
+    { value: 'porcentaje_viaje', label: 'Porcentaje por viaje (%)' }
+  ];
+  function selectModalidadHtml(id, opciones, actual){
+    var placeholder = actual === 'legado' ? '<option value="legado" selected>— Aún no configurado (usa el valor histórico) —</option>' : '';
+    return '<select id="' + id + '">' + placeholder + opciones.map(function(o){
+      return '<option value="' + o.value + '"' + (o.value === actual ? ' selected' : '') + '>' + o.label + '</option>';
+    }).join('') + '</select>';
+  }
+  function panelConfigPagosHtml(empresaId){
+    var cfg = configPagosDe(empresaId);
+    var empresa = buscarEmpresa(empresaId);
+    return '<div class="panel" style="margin-top:16px;">' +
+        '<h2>⚙️ Política de pagos — ' + escapeHtml(empresa.nombre) + '</h2>' +
+        '<p class="campo-nota" style="margin:0 0 12px;">Define cómo se le paga a chofer, ayudante y promotor en tu empresa. Se guarda por empresa (config_empresas) y desde que la guardas, reemplaza el cálculo de siempre en Contabilidad y en "Mi Perfil" — lo ya registrado antes de guardar no cambia de golpe, solo lo que se calcula de aquí en adelante.</p>' +
+        '<form id="formConfigPagos">' +
+          '<div class="form-row">' +
+            '<div class="form-group"><label>Pago a Chofer — modalidad</label>' + selectModalidadHtml('cfgChoferModalidad', OPCIONES_MODALIDAD_PAGO, cfg.choferModalidad) + '</div>' +
+            '<div class="form-group"><label>Monto</label><input type="number" id="cfgChoferMonto" min="0" step="0.01" value="' + (cfg.choferMonto || 0) + '"></div>' +
+          '</div>' +
+          '<div class="form-row">' +
+            '<div class="form-group"><label>Pago a Ayudante — modalidad</label>' + selectModalidadHtml('cfgAyudanteModalidad', OPCIONES_MODALIDAD_PAGO, cfg.ayudanteModalidad) + '</div>' +
+            '<div class="form-group"><label>Monto</label><input type="number" id="cfgAyudanteMonto" min="0" step="0.01" value="' + (cfg.ayudanteMonto || 0) + '"></div>' +
+          '</div>' +
+          '<div class="form-group"><label style="display:flex; align-items:center; gap:8px; cursor:pointer;"><input type="checkbox" id="cfgPromotorHabilitado"' + (cfg.promotorHabilitado ? ' checked' : '') + '> Habilitar comisión de Promotor en esta empresa</label></div>' +
+          '<div id="cfgPromotorCampos" class="form-row"' + (cfg.promotorHabilitado ? '' : ' hidden') + '>' +
+            '<div class="form-group"><label>Comisión al Promotor — modalidad</label>' + selectModalidadHtml('cfgPromotorModalidad', OPCIONES_MODALIDAD_PROMOTOR, cfg.promotorModalidad) + '</div>' +
+            '<div class="form-group"><label>Monto</label><input type="number" id="cfgPromotorMonto" min="0" step="0.01" value="' + (cfg.promotorMonto || 0) + '"></div>' +
+          '</div>' +
+          '<p class="campo-nota" id="notaPromotorDeshabilitado"' + (cfg.promotorHabilitado ? ' hidden' : '') + '>Con los promotores deshabilitados, el campo "Conseguido por / Promotor" se oculta en Despacho y la comisión de promotor de esta empresa queda en S/. 0.00.</p>' +
+          '<button type="submit" class="btn">Guardar política de pagos</button>' +
+          '<p class="modal-status" id="cfgPagosStatus"></p>' +
+        '</form>' +
+      '</div>';
+  }
+  function activarConfigPagos(empresaId){
+    var form = document.getElementById('formConfigPagos');
+    if(!form) return;
+    var chkPromotor = document.getElementById('cfgPromotorHabilitado');
+    chkPromotor.addEventListener('change', function(){
+      document.getElementById('cfgPromotorCampos').hidden = !chkPromotor.checked;
+      document.getElementById('notaPromotorDeshabilitado').hidden = chkPromotor.checked;
+    });
+    form.addEventListener('submit', function(e){
+      e.preventDefault();
+      var cfg = {
+        choferModalidad: document.getElementById('cfgChoferModalidad').value,
+        choferMonto: parseFloat(document.getElementById('cfgChoferMonto').value) || 0,
+        ayudanteModalidad: document.getElementById('cfgAyudanteModalidad').value,
+        ayudanteMonto: parseFloat(document.getElementById('cfgAyudanteMonto').value) || 0,
+        promotorHabilitado: chkPromotor.checked,
+        promotorModalidad: document.getElementById('cfgPromotorModalidad').value,
+        promotorMonto: parseFloat(document.getElementById('cfgPromotorMonto').value) || 0
+      };
+      guardarConfigPagos(empresaId, cfg);
+      var status = document.getElementById('cfgPagosStatus');
+      status.textContent = '✅ Política de pagos guardada para ' + buscarEmpresa(empresaId).nombre + '.';
+      status.className = 'modal-status ok';
+      renderTodo(); // refresca Agenda/Contabilidad si estaban mostrando cifras ya calculadas
+    });
   }
 
   // Bloque "Mi nombre" — editable desde Mi Perfil, se guarda solo en este navegador (ver
@@ -4641,7 +5036,7 @@
   function renderPerfil(){
     var cont = document.getElementById('perfilContenido');
     if(!usuarioActual){
-      cont.innerHTML = '<div class="panel"><div class="empty-state">Inicia sesión como Administrador, Chofer o Afiliador (botón "🔐 Acceso personal") para ver tu billetera.</div></div>';
+      cont.innerHTML = '<div class="panel"><div class="empty-state">Inicia sesión como Administrador, Chofer o Promotor (botón "🔐 Acceso personal") para ver tu billetera.</div></div>';
       return;
     }
     var credPropia = buscarCredencial(usuarioActual.email);
@@ -4659,14 +5054,14 @@
         // Como chofer también puedes traer clientes (te eligen en "Conseguido por" al
         // registrar su pedido) — esa comisión de promotor es aparte de la de manejar,
         // y se liquida igual a tu billetera.
-        '<div class="panel" style="margin-top:16px;"><h2>Comisión como Afiliador / Promotor</h2>' +
+        '<div class="panel" style="margin-top:16px;"><h2>Comisión como Promotor comisionista</h2>' +
           '<div class="stats-strip">' +
             tileHtml({ label: 'Saldo por comisión (5%)', value: formatMoneda(pc.saldo), cls: 'good' }) +
             tileHtml({ label: 'Pedidos conseguidos', value: pc.viajes }) +
           '</div>' + tablaMovimientos(pc.movimientos) +
         '</div>';
       activarEditorNombre(credPropia);
-    } else if(rolDbActual === 'Afiliador'){
+    } else if(rolDbActual === 'Promotor'){
       var a = calcularComisionesPromotor(personaPropia);
       cont.innerHTML = editorNombreHtml(credPropia) +
         '<div class="stats-strip">' +
@@ -4677,9 +5072,14 @@
         '<div class="panel" style="margin-top:16px;"><h2>Historial de transacciones</h2>' + tablaMovimientos(a.movimientos) + '</div>';
       activarEditorNombre(credPropia);
     } else if(rolDbActual === 'Administrador'){
-      var choferes = CREDENCIALES_PERSONAL.filter(function(c){ return c.rol === 'Chofer'; }).map(function(c){ return Object.assign({}, c, calcularComisionesChofer(c)); });
+      // Bug corregido: antes listaba TODOS los choferes de CREDENCIALES_PERSONAL sin
+      // importar la empresa (inofensivo con solo 3 choferes de Kunturmasha, pero con las
+      // 150 cuentas del Directorio Central mostraba choferes de las 5 empresas mezclados,
+      // sin importar cuál estuviera activa) — ahora se filtra por empresaActivaId, igual
+      // que el resto de la Agenda/Contabilidad de este Administrador.
+      var choferes = CREDENCIALES_PERSONAL.filter(function(c){ return c.rol === 'Chofer' && (c.empresaId || 'kunturmasha') === empresaActivaId; }).map(function(c){ return Object.assign({}, c, calcularComisionesChofer(c)); });
       // Comisiones por viajes conseguidos: TODO el personal (Administradores y Choferes
-      // incluidos, no solo Afiliadores) — una fila por PERSONA, no por cuenta.
+      // incluidos, no solo Promotores) — una fila por PERSONA, no por cuenta.
       var promotores = PERSONAS.map(function(pe){ return Object.assign({}, pe, calcularComisionesPromotor(pe)); });
       var totalChofer = choferes.reduce(function(s, c){ return s + c.saldo; }, 0);
       var totalPromotor = promotores.reduce(function(s, pe){ return s + pe.saldo; }, 0);
@@ -4699,11 +5099,13 @@
         '<div class="panel" style="margin-top:16px;"><h2>Choferes — días trabajados y comisión</h2>' +
           '<div class="tabla-wrap"><table class="tabla-registro"><thead><tr><th>Chofer</th><th class="num">Días trabajados</th><th class="num">Viajes</th><th class="num">Saldo / Remuneración</th></tr></thead><tbody>' + filasChofer + '</tbody></table></div>' +
         '</div>' +
-        '<div class="panel" style="margin-top:16px;"><h2>Comisiones por viajes conseguidos (todo el personal)</h2>' +
-          '<p class="campo-nota" style="margin:0 0 12px;">Cualquiera puede traer un cliente — Administradores y Choferes incluidos, no solo Afiliadores.</p>' +
+        '<div class="panel" style="margin-top:16px;"><h2>Promotores de campo — comisiones por viajes conseguidos (todo el personal)</h2>' +
+          '<p class="campo-nota" style="margin:0 0 12px;">Cualquiera puede traer un cliente — Administradores y Choferes incluidos, no solo Promotores.</p>' +
           '<div class="tabla-wrap"><table class="tabla-registro"><thead><tr><th>Persona</th><th class="num">Días trabajados</th><th class="num">Pedidos</th><th class="num">Saldo / Remuneración</th></tr></thead><tbody>' + filasPromotor + '</tbody></table></div>' +
-        '</div>';
+        '</div>' +
+        panelConfigPagosHtml(empresaActivaId);
       activarEditorNombre(credPropia);
+      activarConfigPagos(empresaActivaId);
     }
   }
 
@@ -4736,7 +5138,8 @@
   document.getElementById('fecha').value = fechaSeleccionada;
   togglePiso();
   actualizarTabsPorRol();
-  actualizarAfiliadorUI();
+  actualizarPromotorUI();
+  actualizarUIPagosSegunEmpresa();
   renderTodo();
   iniciarApp();
 })();
