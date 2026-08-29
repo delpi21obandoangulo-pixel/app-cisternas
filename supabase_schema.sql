@@ -135,6 +135,12 @@ end $$;
 alter table public.pedidos enable row level security;
 alter table public.gastos  enable row level security;
 
+-- GRANT explícito de tabla a los roles públicos de Supabase (ver nota junto a las tablas del
+-- Hub Central más abajo): la RLS abierta no sustituye al privilegio de tabla.
+grant usage on schema public to anon, authenticated;
+grant select, insert, update, delete on public.pedidos to anon, authenticated;
+grant select, insert, update, delete on public.gastos  to anon, authenticated;
+
 -- pedidos: acceso abierto en las 4 operaciones — clientes sin cuenta pueden ver la
 -- agenda y cotizar, y el personal (validado solo en la interfaz, ver nota de arriba)
 -- puede crear/editar/borrar. drop de las políticas antiguas basadas en mi_rol()/auth.uid()
@@ -205,11 +211,6 @@ alter table public.solicitudes_centrales add column if not exists lng numeric(9,
 alter table public.solicitudes_centrales add column if not exists manguera_metros text;
 alter table public.solicitudes_centrales add column if not exists piso text;
 
--- Nombre de la empresa en el momento de ofertar (denormalizado a propósito): así la pizarra
--- de subasta no depende de resolver empresa_id -> nombre en el navegador de quien mira.
-alter table public.ofertas_subasta add column if not exists empresa_nombre text;
-update public.ofertas_subasta set empresa_nombre = empresa_id where empresa_nombre is null;
-
 -- Una oferta de una empresa sobre una solicitud — varias empresas pueden ofertar sobre la
 -- misma solicitud; "upsert" por (solicitud_id, empresa_id) para que actualizar tu oferta
 -- reemplace la anterior en vez de acumular filas.
@@ -224,8 +225,24 @@ create table if not exists public.ofertas_subasta (
 );
 comment on table public.ofertas_subasta is 'Ofertas de precio/tiempo de entrega de cada empresa sobre una solicitud del Hub Central.';
 
+-- Nombre de la empresa en el momento de ofertar (denormalizado a propósito): así la pizarra
+-- de subasta no depende de resolver empresa_id -> nombre en el navegador de quien mira.
+-- Va DESPUÉS del "create table" de arriba (antes estaba antes, y en una base nueva la
+-- corrida entera abortaba aquí con "relation ... does not exist", dejando el marketplace
+-- sin políticas ni GRANT — el origen del "permission denied for table").
+alter table public.ofertas_subasta add column if not exists empresa_nombre text;
+update public.ofertas_subasta set empresa_nombre = empresa_id where empresa_nombre is null;
+
 alter table public.solicitudes_centrales enable row level security;
 alter table public.ofertas_subasta       enable row level security;
+
+-- GRANT de tabla a los roles públicos de Supabase. La RLS abierta de abajo NO basta por sí
+-- sola: sin este GRANT, anon recibe "permission denied for table" antes de que la política
+-- llegue a evaluarse (mismo motivo por el que pedidos/gastos también necesitan su GRANT
+-- implícito de Supabase). Explícito aquí para no depender de los privilegios por defecto.
+grant usage on schema public to anon, authenticated;
+grant select, insert, update, delete on public.solicitudes_centrales to anon, authenticated;
+grant select, insert, update, delete on public.ofertas_subasta       to anon, authenticated;
 
 drop policy if exists "solicitudes_acceso_abierto" on public.solicitudes_centrales;
 create policy "solicitudes_acceso_abierto" on public.solicitudes_centrales
@@ -277,6 +294,7 @@ create table if not exists public.config_empresas (
 comment on table public.config_empresas is 'Política de pagos (chofer/ayudante/promotor) configurable por cada empresa asociada — una fila por empresa_id.';
 
 alter table public.config_empresas enable row level security;
+grant select, insert, update, delete on public.config_empresas to anon, authenticated;
 drop policy if exists "config_empresas_acceso_abierto" on public.config_empresas;
 create policy "config_empresas_acceso_abierto" on public.config_empresas
   for all using (true) with check (true);
