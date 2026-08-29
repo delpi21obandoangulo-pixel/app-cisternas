@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>DigiMark Space</title>
+<title>WaterCore Space</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#000000">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -621,14 +621,14 @@
 <div class="modal-backdrop" id="authOverlay" hidden>
   <div class="modal auth-modal">
     <button class="btn-icon modal-close" id="btnCloseAuthOverlay" type="button">✕</button>
-    <div class="auth-brand"><span class="drop" style="color:var(--channel); -webkit-text-fill-color:var(--channel);">🌐</span>DigiMark Space</div>
+    <div class="auth-brand"><span class="drop" style="color:var(--channel); -webkit-text-fill-color:var(--channel);">🌐</span>WaterCore Space</div>
     <p class="auth-sub">Acceso del personal — correo y contraseña</p>
     <div class="auth-error" id="authError" hidden></div>
     <div class="auth-info" id="authInfo" hidden></div>
     <form id="loginPersonalForm">
       <div class="form-group" style="text-align:left;">
         <label>Correo</label>
-        <input type="email" id="loginEmail" placeholder="tucorreo@digimarkspace.pe" required autocomplete="username">
+        <input type="email" id="loginEmail" placeholder="tucorreo@watercorespace.pe" required autocomplete="username">
       </div>
       <div class="form-group" style="text-align:left;">
         <label>Contraseña</label>
@@ -642,7 +642,7 @@
 <div id="app">
   <header class="topbar">
     <div class="brand">
-      <h1><span class="drop">🌐</span>DigiMark Space</h1>
+      <h1><span class="drop">🌐</span>WaterCore Space</h1>
       <p class="sub">Hub Central de Gestión Hídrica · Red de Empresas Asociadas · Trujillo, La Libertad</p>
     </div>
     <div class="topbar-actions">
@@ -841,7 +841,7 @@
         <p class="campo-nota" style="font-size:0.9rem;">🕐 Atención rápida las 24 horas para despachos de cisterna en Trujillo y distritos. Escríbenos o llámanos y te confirmamos tu cotización al toque.</p>
         <div style="display:flex; flex-direction:column; gap:12px; align-items:stretch; max-width:360px; margin:20px auto 0;">
           <a class="btn" style="font-size:0.95rem; padding:14px 20px;"
-             href="https://wa.me/51958132361?text=Hola%20DigiMark%20Space,%20deseo%20cotizar%20un%20servicio%20de%20agua."
+             href="https://wa.me/51958132361?text=Hola%20WaterCore%20Space,%20deseo%20cotizar%20un%20servicio%20de%20agua."
              target="_blank" rel="noopener">💬 Cotizar por WhatsApp</a>
           <a class="btn-ghost" style="font-size:0.95rem; padding:12px 20px;" href="tel:958132361">📞 Llamar ahora</a>
         </div>
@@ -1228,7 +1228,7 @@
       <!--
         La lista de cuentas del personal (correos, y para Piero también contraseñas) ya NO
         se muestra en el perfil de administradores normales — cada empresa solo debe ver lo
-        suyo. Solo la cuenta maestra (piero@digimarkspace.pe) ve aquí el "Directorio Central
+        suyo. Solo la cuenta maestra (piero@watercorespace.pe) ve aquí el "Directorio Central
         de Accesos" con las 150 cuentas de las 5 empresas asociadas (ver renderAjustes() /
         renderDirectorioCentral()). Para cualquier otra cuenta, este contenedor queda vacío.
       -->
@@ -1390,7 +1390,7 @@
   var SESION_PERSONAL_KEY = 'kunturmasha_sesion_personal_v1';
   var PERFIL_NOMBRES_KEY = 'kunturmasha_perfil_nombres_v1'; // { email: nombre editado desde "Mi Perfil" }, ver nombreMostrado()
 
-  // Cuentas fijas del personal, de DigiMark Space (la sede/hub que administra la red) y de
+  // Cuentas fijas del personal, de WaterCore Space (la sede/hub que administra la red) y de
   // cada una de las 5 empresas asociadas. La contraseña vive en texto plano aquí porque el
   // login se valida enteramente en el navegador (sin backend de autenticación) — es un
   // candado de interfaz para un equipo pequeño y conocido, no una defensa contra quien lea
@@ -1407,7 +1407,7 @@
   // "empresaId": a qué empresa (ver EMPRESAS más abajo) pertenece esta cuenta — es la base del
   // aislamiento entre empresas asociadas (ver actualizarSelectorEmpresa()): una cuenta con
   // empresaId fijo solo puede operar esa empresa, nunca cambiar al espacio de otra.
-  // "accesoGlobal": solo el equipo de DigiMark Space lo tiene — puede cambiar libremente entre
+  // "accesoGlobal": solo el equipo de WaterCore Space lo tiene — puede cambiar libremente entre
   // TODAS las empresas de la red (soporte/administración de la plataforma), igual que antes
   // podía cualquier Administrador cuando Kunturmasha era la Sede Central.
   // "roles": multi-rol dinámico (ver rolesDeCredencial()/cambiarRolActivo()) — con qué roles
@@ -1417,8 +1417,8 @@
   // "superAdmin": Piero, cuenta maestra — accesoGlobal + los 4 roles de personal a la vez
   // (Administrador/Chofer/Ayudante/Promotor), pensada para pruebas y soporte de toda la red.
   var CREDENCIALES_PERSONAL = [
-    { email: 'piero@digimarkspace.pe', password: 'piero2026', rol: 'Administrador', roles: ['admin', 'chofer', 'ayudante', 'promotor'], nombre: 'Piero (SuperAdmin)', personaId: 'piero', empresaId: 'digimark-space', accesoGlobal: true, superAdmin: true },
-    { email: 'admin@digimarkspace.pe', password: 'digimark2026', rol: 'Administrador', nombre: 'Equipo DigiMark Space (Admin)', personaId: 'digimark-admin', empresaId: 'digimark-space', accesoGlobal: true },
+    { email: 'piero@watercorespace.pe', password: 'piero2026', rol: 'Administrador', roles: ['admin', 'chofer', 'ayudante', 'promotor'], nombre: 'Piero (SuperAdmin)', personaId: 'piero', empresaId: 'watercore-space', accesoGlobal: true, superAdmin: true },
+    { email: 'admin@watercorespace.pe', password: 'watercore2026', rol: 'Administrador', nombre: 'Equipo WaterCore Space (Admin)', personaId: 'watercore-admin', empresaId: 'watercore-space', accesoGlobal: true },
     { email: 'admin1@kunturmasha.pe', password: 'admin2026', rol: 'Administrador', nombre: 'Piero (Admin)', parejaEmail: 'chofer1@kunturmasha.pe', personaId: 'piero', empresaId: 'kunturmasha' },
     { email: 'admin2@kunturmasha.pe', password: 'admin2026', rol: 'Administrador', nombre: 'Frank (Admin)', personaId: 'frank', empresaId: 'kunturmasha' },
     { email: 'admin3@kunturmasha.pe', password: 'admin2026', rol: 'Administrador', nombre: 'Shimo (Admin)', personaId: 'shimo', empresaId: 'kunturmasha' },
@@ -1436,8 +1436,19 @@
     { email: 'chofer@gotadorada.pe', password: 'chofer2026', rol: 'Chofer', nombre: 'Chofer Gota Dorada 1', personaId: 'chofer-gotadorada-1', empresaId: 'gota-dorada' },
     { email: 'admin@cisternaselvalle.pe', password: 'admin2026', rol: 'Administrador', nombre: 'Admin Cisternas El Valle', personaId: 'admin-cisternaselvalle', empresaId: 'cisternas-el-valle' },
     { email: 'chofer@cisternaselvalle.pe', password: 'chofer2026', rol: 'Chofer', nombre: 'Chofer Cisternas El Valle 1', personaId: 'chofer-cisternaselvalle-1', empresaId: 'cisternas-el-valle' },
-    { email: 'admin@manantialsur.pe', password: 'admin2026', rol: 'Administrador', nombre: 'Admin Manantial Sur', personaId: 'admin-manantialsur', empresaId: 'manantial-sur' },
-    { email: 'chofer@manantialsur.pe', password: 'chofer2026', rol: 'Chofer', nombre: 'Chofer Manantial Sur 1', personaId: 'chofer-manantialsur-1', empresaId: 'manantial-sur' }
+    // Pozo Cangrejo Loco — segunda empresa asociada con plantilla completa (como Kunturmasha):
+    // 3 personas con cuenta de Admin y de Chofer emparejadas + 3 promotores. Acceso totalmente
+    // independiente (empresaId fijo, sin accesoGlobal) — nunca comparte datos con Kunturmasha
+    // ni con ninguna otra empresa (ver actualizarSelectorEmpresa()).
+    { email: 'admin1@pozocangrejoloco.pe', password: 'admin2026', rol: 'Administrador', nombre: 'Marcos (Admin)', parejaEmail: 'chofer1@pozocangrejoloco.pe', personaId: 'pcl-marcos', empresaId: 'pozo-cangrejo-loco' },
+    { email: 'admin2@pozocangrejoloco.pe', password: 'admin2026', rol: 'Administrador', nombre: 'Luis (Admin)', personaId: 'pcl-luis', empresaId: 'pozo-cangrejo-loco' },
+    { email: 'admin3@pozocangrejoloco.pe', password: 'admin2026', rol: 'Administrador', nombre: 'Diego (Admin)', personaId: 'pcl-diego', empresaId: 'pozo-cangrejo-loco' },
+    { email: 'chofer1@pozocangrejoloco.pe', password: 'chofer2026', rol: 'Chofer', nombre: 'Marcos (Chofer)', parejaEmail: 'admin1@pozocangrejoloco.pe', personaId: 'pcl-marcos', empresaId: 'pozo-cangrejo-loco' },
+    { email: 'chofer2@pozocangrejoloco.pe', password: 'chofer2026', rol: 'Chofer', nombre: 'Luis (Chofer)', personaId: 'pcl-luis', empresaId: 'pozo-cangrejo-loco' },
+    { email: 'chofer3@pozocangrejoloco.pe', password: 'chofer2026', rol: 'Chofer', nombre: 'Diego (Chofer)', personaId: 'pcl-diego', empresaId: 'pozo-cangrejo-loco' },
+    { email: 'promotor1@pozocangrejoloco.pe', password: 'promotor2026', rol: 'Promotor', nombre: 'Carla (Promotora)', personaId: 'pcl-carla', empresaId: 'pozo-cangrejo-loco' },
+    { email: 'promotor2@pozocangrejoloco.pe', password: 'promotor2026', rol: 'Promotor', nombre: 'Nadia (Promotora)', personaId: 'pcl-nadia', empresaId: 'pozo-cangrejo-loco' },
+    { email: 'promotor3@pozocangrejoloco.pe', password: 'promotor2026', rol: 'Promotor', nombre: 'Promotor PCL 3', personaId: 'pcl-promotor3', empresaId: 'pozo-cangrejo-loco' }
   ];
   function buscarCredencial(email){
     var norm = String(email || '').trim().toLowerCase();
@@ -1457,8 +1468,8 @@
      (un correo de promotor puntual) para no perder los pedidos ya registrados.
      ========================================================================== */
   var PERSONAS = [
-    { id: 'digimark-admin', nombre: 'Equipo DigiMark Space (Admin)', emails: ['admin@digimarkspace.pe'] },
-    { id: 'piero', nombre: 'Piero (Admin / Chofer / SuperAdmin)', emails: ['admin1@kunturmasha.pe', 'chofer1@kunturmasha.pe', 'piero@digimarkspace.pe'] },
+    { id: 'watercore-admin', nombre: 'Equipo WaterCore Space (Admin)', emails: ['admin@watercorespace.pe'] },
+    { id: 'piero', nombre: 'Piero (Admin / Chofer / SuperAdmin)', emails: ['admin1@kunturmasha.pe', 'chofer1@kunturmasha.pe', 'piero@watercorespace.pe'] },
     { id: 'frank', nombre: 'Frank (Admin / Chofer)', emails: ['admin2@kunturmasha.pe', 'chofer2@kunturmasha.pe'] },
     { id: 'shimo', nombre: 'Shimo (Admin / Chofer)', emails: ['admin3@kunturmasha.pe', 'chofer3@kunturmasha.pe'] },
     { id: 'ronald', nombre: 'Ronald (Promotor)', emails: ['promotor1@kunturmasha.pe'] },
@@ -1472,8 +1483,12 @@
     { id: 'chofer-gotadorada-1', nombre: 'Chofer Gota Dorada 1', emails: ['chofer@gotadorada.pe'] },
     { id: 'admin-cisternaselvalle', nombre: 'Admin Cisternas El Valle', emails: ['admin@cisternaselvalle.pe'] },
     { id: 'chofer-cisternaselvalle-1', nombre: 'Chofer Cisternas El Valle 1', emails: ['chofer@cisternaselvalle.pe'] },
-    { id: 'admin-manantialsur', nombre: 'Admin Manantial Sur', emails: ['admin@manantialsur.pe'] },
-    { id: 'chofer-manantialsur-1', nombre: 'Chofer Manantial Sur 1', emails: ['chofer@manantialsur.pe'] }
+    { id: 'pcl-marcos', nombre: 'Marcos (Admin / Chofer)', emails: ['admin1@pozocangrejoloco.pe', 'chofer1@pozocangrejoloco.pe'] },
+    { id: 'pcl-luis', nombre: 'Luis (Admin / Chofer)', emails: ['admin2@pozocangrejoloco.pe', 'chofer2@pozocangrejoloco.pe'] },
+    { id: 'pcl-diego', nombre: 'Diego (Admin / Chofer)', emails: ['admin3@pozocangrejoloco.pe', 'chofer3@pozocangrejoloco.pe'] },
+    { id: 'pcl-carla', nombre: 'Carla (Promotora)', emails: ['promotor1@pozocangrejoloco.pe'] },
+    { id: 'pcl-nadia', nombre: 'Nadia (Promotora)', emails: ['promotor2@pozocangrejoloco.pe'] },
+    { id: 'pcl-promotor3', nombre: 'Promotor PCL 3', emails: ['promotor3@pozocangrejoloco.pe'] }
   ];
   function personaDeCredencial(cred){
     if(!cred) return null;
@@ -1559,7 +1574,7 @@
   }
 
   /* ==========================================================================
-     Marketplace multiempresa (rama "demo"). "DigiMark Space" es la marca paraguas / Sede
+     Marketplace multiempresa (rama "demo"). "WaterCore Space" es la marca paraguas / Sede
      Central que administra toda la red: opera el Hub Central/subasta, adjudica solicitudes
      y retiene su comisión de intermediación (esSedeCentral). Cada una de las 5 empresas
      asociadas (Kunturmasha incluida — ya NO es la marca principal, es una empresa asociada
@@ -1567,11 +1582,12 @@
      su propia Contabilidad (ver pedidosDelPeriodo()/gastosDelPeriodo()) y su propia flota de
      choferes (ver poblarSelectChofer()) — todo filtrado por empresaActivaId, sin duplicar el
      código de esas vistas. El switch de empresa (topbar, solo Administrador) simula entrar al
-     espacio de cada empresa; solo las cuentas con accesoGlobal (equipo DigiMark Space) pueden
+     espacio de cada empresa; solo las cuentas con accesoGlobal (equipo WaterCore Space) pueden
      moverse libremente entre todas — cualquier otra cuenta queda fija en la suya (aislamiento
      estricto, ver actualizarSelectorEmpresa()).
-     Kunturmasha y las 4 empresas nuevas (AquaTrujillo, Gota Dorada, Cisternas El Valle,
-     Manantial Sur) tienen choferes/administradores reales (CREDENCIALES_PERSONAL);
+     Kunturmasha y Pozo Cangrejo Loco tienen plantilla completa (varios administradores,
+     choferes y promotores); AquaTrujillo, Gota Dorada y Cisternas El Valle arrancan con un
+     administrador y un chofer reales (CREDENCIALES_PERSONAL);
      "choferesDemo" solo es un respaldo por si alguna empresa todavía no tiene chofer dado
      de alta con cuenta propia (ver poblarSelectChofer()).
      ========================================================================== */
@@ -1582,19 +1598,19 @@
   // la de choferes/promotores. Ahora las tres se calculan desde esta misma constante.
   var COMISION_ESTANDAR = 0.05;
   var EMPRESAS = [
-    { id: 'digimark-space', nombre: 'DigiMark Space', esSedeCentral: true, comisionPeaje: COMISION_ESTANDAR, choferesDemo: [] },
+    { id: 'watercore-space', nombre: 'WaterCore Space', esSedeCentral: true, comisionPeaje: COMISION_ESTANDAR, choferesDemo: [] },
     { id: 'kunturmasha', nombre: 'Kunturmasha', esSedeCentral: false, comisionPeaje: COMISION_ESTANDAR, choferesDemo: [] },
+    { id: 'pozo-cangrejo-loco', nombre: 'Pozo Cangrejo Loco', esSedeCentral: false, comisionPeaje: COMISION_ESTANDAR, choferesDemo: [] },
     { id: 'aqua-trujillo', nombre: 'AquaTrujillo', esSedeCentral: false, comisionPeaje: COMISION_ESTANDAR, choferesDemo: ['Chofer AquaTrujillo 1'] },
     { id: 'gota-dorada', nombre: 'Gota Dorada', esSedeCentral: false, comisionPeaje: COMISION_ESTANDAR, choferesDemo: ['Chofer Gota Dorada 1'] },
-    { id: 'cisternas-el-valle', nombre: 'Cisternas El Valle', esSedeCentral: false, comisionPeaje: COMISION_ESTANDAR, choferesDemo: ['Chofer Cisternas El Valle 1'] },
-    { id: 'manantial-sur', nombre: 'Manantial Sur', esSedeCentral: false, comisionPeaje: COMISION_ESTANDAR, choferesDemo: ['Chofer Manantial Sur 1'] }
+    { id: 'cisternas-el-valle', nombre: 'Cisternas El Valle', esSedeCentral: false, comisionPeaje: COMISION_ESTANDAR, choferesDemo: ['Chofer Cisternas El Valle 1'] }
   ];
 
   /* ==========================================================================
-     Directorio Central de Accesos (solo visible para piero@digimarkspace.pe, ver
+     Directorio Central de Accesos (solo visible para piero@watercorespace.pe, ver
      renderDirectorioCentral()): 150 cuentas de prueba — 10 para cada uno de los 3 roles
      operativos (Administrador, Chofer, Ayudante) en cada una de las 5 empresas asociadas
-     (no Sede Central: DigiMark Space no tiene su propia flota). Se generan una sola vez al
+     (no Sede Central: WaterCore Space no tiene su propia flota). Se generan una sola vez al
      cargar la página, no en cada render, y se agregan a CREDENCIALES_PERSONAL para que sean
      cuentas de verdad (se puede iniciar sesión con cualquiera): así Piero puede copiarle a
      una empresa credenciales ya listas para su Administrador/Chofer/Ayudante en vez de
@@ -2078,7 +2094,7 @@
   // credencial trae empresaId fijo solo puede ver/operar SU empresa — el <select> queda con
   // una única opción y deshabilitado, así nunca puede apuntar empresaActivaId (y por lo tanto
   // los filtros de pedidos/gastos/choferes/Hub Central) a los datos de otra empresa. Solo las
-  // cuentas con accesoGlobal (equipo DigiMark Space) ven y pueden elegir entre las 6 opciones
+  // cuentas con accesoGlobal (equipo WaterCore Space) ven y pueden elegir entre las 6 opciones
   // (la Sede Central y las 5 empresas asociadas). Se llama al iniciar la app y cada vez que
   // cambia la sesión de personal (entrarComoPersonal/cerrarSesionPersonal).
   function actualizarSelectorEmpresa(){
@@ -4758,9 +4774,9 @@
   /* ---------- Ajustes: cuenta propia + lista fija de personal ---------- */
   // La lista de cuentas del personal (correo + contraseña) ya no se muestra en el perfil de
   // administradores normales — cada empresa solo administra la suya, no ve las credenciales
-  // de las demás. Únicamente piero@digimarkspace.pe (cuenta maestra) ve aquí el "Directorio
+  // de las demás. Únicamente piero@watercorespace.pe (cuenta maestra) ve aquí el "Directorio
   // Central de Accesos" con las 150 cuentas generadas (ver generarDirectorioCentral()).
-  var PIERO_SUPERADMIN_EMAIL = 'piero@digimarkspace.pe';
+  var PIERO_SUPERADMIN_EMAIL = 'piero@watercorespace.pe';
   function renderAjustes(){
     var wrap = document.getElementById('ajustesPersonalWrap');
     if(!wrap) return;
