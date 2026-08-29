@@ -1712,9 +1712,10 @@
   }
   // Vuelca la plantilla sobre el pool de credenciales: fija cred.roles / cred.nombre y
   // marca cred.enPlantilla. Si un correo confirmado no existía en el pool (lo escribió el
-  // Administrador a mano), se sintetiza una credencial real para que pueda iniciar sesión
-  // (contraseña derivada del correo, como en el Directorio Central). Se llama al cargar y
-  // cada vez que el Administrador guarda un cambio en Ajustes.
+  // Administrador a mano), se sintetiza una credencial real para que pueda iniciar sesión.
+  // La contraseña sale de entry.password si el Administrador la escribió (alta manual, hoy
+  // solo Pozo Cangrejo Loco); si no, se deriva del correo como en el Directorio Central.
+  // Se llama al cargar y cada vez que el Administrador guarda un cambio en Ajustes.
   function aplicarPlantillaACredenciales(){
     Object.keys(plantillaEmpresas).forEach(function(empresaId){
       var roster = plantillaEmpresas[empresaId] || {};
@@ -1726,9 +1727,10 @@
         var rolDb = PLR_INT_A_DB[rolesArr[0]] || 'Administrador';
         var cred = buscarCredencial(email);
         if(!cred){
-          cred = { email: email, password: passwordOchoDigitos(email), rol: rolDb, nombre: entry.nombre || email, empresaId: empresaId, personalPlantilla: true };
+          cred = { email: email, password: entry.password || passwordOchoDigitos(email), rol: rolDb, nombre: entry.nombre || email, empresaId: empresaId, personalPlantilla: true };
           CREDENCIALES_PERSONAL.push(cred);
         }
+        if(entry.password) cred.password = entry.password;
         cred.rol = rolDb;
         cred.roles = rolesArr;
         cred.nombre = entry.nombre || cred.nombre;
@@ -4957,46 +4959,71 @@
   }
 
   // ---- Panel "Personal de la empresa" — el Administrador confirma quién trabaja en su
-  // empresa: elige un correo del pool (o escribe uno nuevo), le pone nombre y uno o más
-  // roles. Apunta SIEMPRE a la empresa activa (empresaActivaId): un Administrador normal
-  // está fijo en la suya; Piero elige cuál con el switch 🏢 de la cabecera. ----
+  // empresa. Apunta SIEMPRE a la empresa activa (empresaActivaId): un Administrador normal
+  // está fijo en la suya; Piero elige cuál con el switch 🏢 de la cabecera.
+  // Dos modos de alta:
+  //   • MANUAL (hoy solo Pozo Cangrejo Loco, ver PLANTILLA_ALTA_MANUAL): el Administrador
+  //     escribe correo, contraseña, nombre y roles a mano — no hay pool que elegir.
+  //   • POOL (el resto): elige un correo de la lista ya generada, o escribe uno nuevo. ----
+  var PLANTILLA_ALTA_MANUAL = { 'pozo-cangrejo-loco': true };
+  function esAltaManual(empresaId){ return !!PLANTILLA_ALTA_MANUAL[empresaId]; }
   function panelPersonalEmpresaHtml(){
     var empresa = buscarEmpresa(empresaActivaId);
+    var manual = esAltaManual(empresa.id);
     var roster = rosterDeEmpresa(empresa.id);
+    var colspan = manual ? 5 : 4;
     var filas = roster.map(function(m){
       var chips = m.roles.map(function(r){
         return '<span class="rol-pill ' + (ROL_PILL_CLASE[PLR_INT_A_DB[r]] || '') + '">' + escapeHtml(PLR_ETIQUETA[r] || r) + '</span>';
       }).join(' ');
+      var passCol = manual ? '<td class="mono">' + escapeHtml((m.cred && m.cred.password) || '—') + '</td>' : '';
       return '<tr>' +
         '<td>' + escapeHtml(m.nombre) + '</td>' +
         '<td class="mono">' + escapeHtml(m.email) + '</td>' +
+        passCol +
         '<td>' + (chips || '<span style="color:var(--muted);">—</span>') + '</td>' +
         '<td style="white-space:nowrap;">' +
           '<button type="button" class="btn-ghost btn-pe-editar" data-email="' + escapeHtml(m.email) + '" style="font-size:0.68rem; padding:4px 8px;">✏️ Editar</button> ' +
           '<button type="button" class="btn-ghost btn-pe-quitar" data-email="' + escapeHtml(m.email) + '" style="font-size:0.68rem; padding:4px 8px;">🗑️ Quitar</button>' +
         '</td></tr>';
-    }).join('') || '<tr><td colspan="4" style="text-align:center; color:var(--muted);">Sin personal confirmado todavía — agrega a alguien abajo para que aparezca en Despacho, Agenda, Contabilidad y billeteras.</td></tr>';
-    var enRoster = {};
-    roster.forEach(function(m){ enRoster[m.email] = true; });
-    var opcionesPool = poolCorreosDe(empresa.id).filter(function(o){ return !enRoster[o.email]; }).map(function(o){
-      return '<option value="' + escapeHtml(o.email) + '">' + escapeHtml(o.email) + ' — ' + escapeHtml(o.rol) + (o.directorio ? ' (directorio)' : '') + '</option>';
-    }).join('');
-    var dominio = (empresa.id + '.pe').replace(/-/g, '');
+    }).join('') || ('<tr><td colspan="' + colspan + '" style="text-align:center; color:var(--muted);">Sin personal confirmado todavía — agrega a alguien abajo para que aparezca en Despacho, Agenda, Contabilidad y billeteras.</td></tr>');
     var checksRoles = PLR_ROLES.map(function(r){
       return '<label style="display:inline-flex; align-items:center; gap:6px; margin:0 14px 6px 0; cursor:pointer;"><input type="checkbox" class="pe-rol" value="' + r + '"> ' + escapeHtml(PLR_ETIQUETA[r]) + '</label>';
     }).join('');
-    return '<div class="panel" style="margin-bottom:16px;">' +
-      '<h2>👥 Personal de la empresa — ' + escapeHtml(empresa.nombre) + '</h2>' +
-      '<p class="campo-nota" style="margin:0 0 12px;">Solo el personal que confirmes aquí aparece en el selector de Chofer del Despacho, en "Conseguido por / Promotor", en las tablas de Contabilidad y en las billeteras. Los correos sin confirmar siguen en el pool para agregarlos cuando quieras.</p>' +
-      '<div class="tabla-wrap"><table class="tabla-registro"><thead><tr><th>Nombre</th><th>Correo</th><th>Roles</th><th></th></tr></thead><tbody id="peTbody">' + filas + '</tbody></table></div>' +
-      '<form id="formPersonalEmpresa" style="margin-top:16px; border-top:1px solid var(--border); padding-top:14px;">' +
-        '<h3 style="font-size:0.9rem; margin:0 0 10px;" id="peFormTitulo">Agregar personal</h3>' +
-        '<input type="hidden" id="peEditando" value="">' +
+    var dominio = (empresa.id + '.pe').replace(/-/g, '');
+    var camposIdentidad;
+    if(manual){
+      camposIdentidad =
+        '<div class="form-row">' +
+          '<div class="form-group"><label>Correo</label><input type="email" id="peCorreo" placeholder="nombre@' + escapeHtml(dominio) + '" autocomplete="off"></div>' +
+          '<div class="form-group"><label>Contraseña</label><input type="text" id="pePassword" placeholder="Contraseña de acceso" autocomplete="off"></div>' +
+          '<div class="form-group"><label>Nombre del trabajador</label><input type="text" id="peNombre" placeholder="Ej: Juan Pérez"></div>' +
+        '</div>';
+    } else {
+      var enRoster = {};
+      roster.forEach(function(m){ enRoster[m.email] = true; });
+      var opcionesPool = poolCorreosDe(empresa.id).filter(function(o){ return !enRoster[o.email]; }).map(function(o){
+        return '<option value="' + escapeHtml(o.email) + '">' + escapeHtml(o.email) + ' — ' + escapeHtml(o.rol) + (o.directorio ? ' (directorio)' : '') + '</option>';
+      }).join('');
+      camposIdentidad =
         '<div class="form-row">' +
           '<div class="form-group"><label>Correo</label><select id="peCorreoSelect"><option value="">— Elige un correo del pool —</option>' + opcionesPool + '<option value="__nuevo__">✍️ Escribir un correo nuevo…</option></select></div>' +
           '<div class="form-group" id="peCorreoNuevoWrap" hidden><label>Correo nuevo</label><input type="email" id="peCorreoNuevo" placeholder="nombre@' + escapeHtml(dominio) + '"></div>' +
           '<div class="form-group"><label>Nombre del trabajador</label><input type="text" id="peNombre" placeholder="Ej: Juan Pérez"></div>' +
-        '</div>' +
+        '</div>';
+    }
+    var thPass = manual ? '<th>Contraseña</th>' : '';
+    var nota = manual
+      ? 'Escribe a mano el correo, la contraseña, el nombre y los roles de cada trabajador. Solo el personal que confirmes aquí aparece en Despacho, "Conseguido por / Promotor", Contabilidad y billeteras.'
+      : 'Solo el personal que confirmes aquí aparece en el selector de Chofer del Despacho, en "Conseguido por / Promotor", en las tablas de Contabilidad y en las billeteras. Los correos sin confirmar siguen en el pool para agregarlos cuando quieras.';
+    return '<div class="panel" style="margin-bottom:16px;">' +
+      '<h2>👥 Personal de la empresa — ' + escapeHtml(empresa.nombre) + '</h2>' +
+      '<p class="campo-nota" style="margin:0 0 12px;">' + nota + '</p>' +
+      '<div class="tabla-wrap"><table class="tabla-registro"><thead><tr><th>Nombre</th><th>Correo</th>' + thPass + '<th>Roles</th><th></th></tr></thead><tbody id="peTbody">' + filas + '</tbody></table></div>' +
+      '<form id="formPersonalEmpresa" style="margin-top:16px; border-top:1px solid var(--border); padding-top:14px;">' +
+        '<h3 style="font-size:0.9rem; margin:0 0 10px;" id="peFormTitulo">Agregar personal</h3>' +
+        '<input type="hidden" id="peEditando" value="">' +
+        camposIdentidad +
         '<div class="form-group"><label>Roles autorizados</label><div style="margin-top:6px; display:flex; flex-wrap:wrap;">' + checksRoles + '</div>' +
           '<p class="campo-nota" style="margin:4px 0 0;">Con dos o más roles, esta persona podrá alternar entre ellos desde el selector de rol de la cabecera, sin volver a iniciar sesión.</p>' +
         '</div>' +
@@ -5009,9 +5036,10 @@
   function activarPanelPersonalEmpresa(){
     var form = document.getElementById('formPersonalEmpresa');
     if(!form) return;
+    var manual = esAltaManual(empresaActivaId);
     var sel = document.getElementById('peCorreoSelect');
     var nuevoWrap = document.getElementById('peCorreoNuevoWrap');
-    sel.addEventListener('change', function(){ nuevoWrap.hidden = sel.value !== '__nuevo__'; });
+    if(sel && nuevoWrap) sel.addEventListener('change', function(){ nuevoWrap.hidden = sel.value !== '__nuevo__'; });
     document.getElementById('peTbody').addEventListener('click', function(e){
       var bE = e.target.closest('.btn-pe-editar');
       var bQ = e.target.closest('.btn-pe-quitar');
@@ -5023,16 +5051,29 @@
       e.preventDefault();
       var status = document.getElementById('pePersonalStatus');
       var editando = document.getElementById('peEditando').value;
-      var correo = editando
-        ? editando
-        : (sel.value === '__nuevo__' ? normalizarCorreo(document.getElementById('peCorreoNuevo').value) : sel.value);
+      var roster = plantillaEmpresas[empresaActivaId] || {};
+      var correo, password;
+      if(manual){
+        var campoCorreo = document.getElementById('peCorreo');
+        correo = editando ? editando : normalizarCorreo(campoCorreo ? campoCorreo.value : '');
+        var campoPass = document.getElementById('pePassword');
+        password = (campoPass ? campoPass.value : '').trim();
+        if(editando && !password) password = (roster[editando] && roster[editando].password) || '';
+      } else {
+        correo = editando
+          ? editando
+          : (sel && sel.value === '__nuevo__' ? normalizarCorreo(document.getElementById('peCorreoNuevo').value) : (sel ? sel.value : ''));
+      }
       var nombre = document.getElementById('peNombre').value.trim();
       var roles = PLR_ROLES.filter(function(r){ return !!document.querySelector('.pe-rol[value="' + r + '"]:checked'); });
-      if(!correo || correo.indexOf('@') === -1){ status.textContent = 'Elige o escribe un correo válido.'; status.className = 'modal-status err'; return; }
+      if(!correo || correo.indexOf('@') === -1){ status.textContent = 'Escribe un correo válido.'; status.className = 'modal-status err'; return; }
+      if(manual && !password){ status.textContent = 'Ponle una contraseña de acceso.'; status.className = 'modal-status err'; return; }
       if(!nombre){ status.textContent = 'Ponle el nombre del trabajador.'; status.className = 'modal-status err'; return; }
       if(!roles.length){ status.textContent = 'Marca al menos un rol.'; status.className = 'modal-status err'; return; }
       plantillaEmpresas[empresaActivaId] = plantillaEmpresas[empresaActivaId] || {};
-      plantillaEmpresas[empresaActivaId][correo] = { nombre: nombre, roles: roles };
+      var entry = { nombre: nombre, roles: roles };
+      if(manual) entry.password = password;
+      plantillaEmpresas[empresaActivaId][correo] = entry;
       guardarPlantillaEmpresas();
       aplicarPlantillaACredenciales();
       var msg = '✅ ' + nombre + ' ' + (editando ? 'actualizado' : 'confirmado') + ' en ' + buscarEmpresa(empresaActivaId).nombre + '.';
@@ -5045,8 +5086,14 @@
     var entry = (plantillaEmpresas[empresaActivaId] || {})[email];
     if(!entry) return;
     document.getElementById('peEditando').value = email;
-    document.getElementById('peCorreoSelect').disabled = true;
-    document.getElementById('peCorreoNuevoWrap').hidden = true;
+    var campoCorreo = document.getElementById('peCorreo');
+    if(campoCorreo){ campoCorreo.value = email; campoCorreo.disabled = true; }
+    var campoPass = document.getElementById('pePassword');
+    if(campoPass) campoPass.value = entry.password || '';
+    var sel = document.getElementById('peCorreoSelect');
+    if(sel) sel.disabled = true;
+    var nuevoWrap = document.getElementById('peCorreoNuevoWrap');
+    if(nuevoWrap) nuevoWrap.hidden = true;
     document.getElementById('peNombre').value = entry.nombre || '';
     document.querySelectorAll('.pe-rol').forEach(function(c){ c.checked = (entry.roles || []).indexOf(c.value) !== -1; });
     document.getElementById('peFormTitulo').textContent = 'Editar: ' + email;
@@ -5058,15 +5105,19 @@
     if(!f) return;
     f.reset();
     document.getElementById('peEditando').value = '';
-    document.getElementById('peCorreoSelect').disabled = false;
-    document.getElementById('peCorreoNuevoWrap').hidden = true;
+    var campoCorreo = document.getElementById('peCorreo');
+    if(campoCorreo) campoCorreo.disabled = false;
+    var sel = document.getElementById('peCorreoSelect');
+    if(sel) sel.disabled = false;
+    var nuevoWrap = document.getElementById('peCorreoNuevoWrap');
+    if(nuevoWrap) nuevoWrap.hidden = true;
     document.getElementById('peFormTitulo').textContent = 'Agregar personal';
     document.getElementById('peCancelar').hidden = true;
   }
   function quitarPersonalEmpresa(email){
     var roster = plantillaEmpresas[empresaActivaId] || {};
     if(!roster[email]) return;
-    if(!confirm('¿Quitar a ' + (roster[email].nombre || email) + ' del personal de ' + buscarEmpresa(empresaActivaId).nombre + '?\n\nEl correo seguirá disponible en el pool y sus registros pasados no se borran, pero dejará de aparecer en Despacho, Agenda y billeteras.')) return;
+    if(!confirm('¿Quitar a ' + (roster[email].nombre || email) + ' del personal de ' + buscarEmpresa(empresaActivaId).nombre + '?\n\nSus registros pasados no se borran, pero dejará de aparecer en Despacho, Agenda, Contabilidad y billeteras. Puedes volver a darlo de alta cuando quieras.')) return;
     delete roster[email];
     guardarPlantillaEmpresas();
     var cred = buscarCredencial(email);
