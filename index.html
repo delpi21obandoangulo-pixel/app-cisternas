@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>WaterCore Space</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#dceffb">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
@@ -14,32 +14,64 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
   :root{
-    color-scheme: dark;
-    --bg:#000000;
-    --surface:rgba(255,255,255,0.045);
-    --surface-2:rgba(255,255,255,0.085);
-    --surface-solid:#111111;
-    --border:rgba(255,255,255,0.10);
-    --border-strong:rgba(255,255,255,0.18);
-    --ink:#F5F5F7;
-    --muted:#98989D;
-    --channel:#2997ff;
-    --channel-dark:#0a7cff;
+    color-scheme: light;
+    /* ========================================================================
+       TINTE DE MARCA — un solo tono (hue) gobierna toda la piel de la web.
+       El selector de color de Ajustes (por empresa afiliada) solo cambia
+       --tint-h y --tint-s en <html> vía JS (ver aplicarTinteEmpresa()); todo
+       lo demás se deriva aquí con hsl()/color-mix(). Por defecto: celeste
+       pastel suave, ni muy saturado ni frío, armonizado con neutros tibios.
+       ======================================================================== */
+    --tint-h: 202;      /* celeste */
+    --tint-s: 62%;      /* saturación del acento (no de los fondos) */
+
+    --bg: hsl(var(--tint-h) 58% 97.5%);
+    --bg-2: hsl(var(--tint-h) 52% 94%);
+    --surface: hsl(var(--tint-h) 46% 100% / 0.74);
+    --surface-2: hsl(var(--tint-h) 42% 96% / 0.92);
+    --surface-solid: hsl(var(--tint-h) 50% 99.5%);
+    --border: hsl(var(--tint-h) 38% 58% / 0.24);
+    --border-strong: hsl(var(--tint-h) 40% 48% / 0.40);
+    --ink: hsl(var(--tint-h) 30% 17%);
+    --muted: hsl(var(--tint-h) 16% 42%);
+
+    --channel: hsl(var(--tint-h) var(--tint-s) 45%);
+    --channel-dark: hsl(var(--tint-h) calc(var(--tint-s) + 8%) 37%);
     --channel-ink:#ffffff;
-    --aqua:#64d2ff;
-    --clay:#bf5af2;
-    --good:#30d158;
-    --good-bg: color-mix(in srgb, var(--good) 16%, transparent);
-    --warn:#ff9f0a;
-    --warn-bg: color-mix(in srgb, var(--warn) 16%, transparent);
-    --bad:#ff453a;
-    --bad-bg: color-mix(in srgb, var(--bad) 16%, transparent);
-    --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 24px 48px -20px rgba(0,0,0,0.65);
-    --glow-channel: 0 0 24px -4px rgba(41,151,255,0.55);
-    --blur: blur(20px) saturate(180%);
+    --aqua: hsl(calc(var(--tint-h) + 14) 66% 40%);
+    --clay: hsl(282 46% 52%);
+    --good:#1c9d5b;
+    --good-bg: color-mix(in srgb, var(--good) 14%, transparent);
+    --warn:#c9820a;
+    --warn-bg: color-mix(in srgb, var(--warn) 15%, transparent);
+    --bad:#e0453a;
+    --bad-bg: color-mix(in srgb, var(--bad) 13%, transparent);
+
+    /* derivados de sombra/brillo/vidrio, todos teñidos con el hue activo */
+    --shadow: 0 1px 2px hsl(var(--tint-h) 40% 40% / 0.07), 0 22px 44px -24px hsl(var(--tint-h) 44% 34% / 0.26);
+    --shadow-lg: 0 28px 56px -26px hsl(var(--tint-h) 44% 30% / 0.32);
+    --shadow-pop: 0 14px 34px -14px hsl(var(--tint-h) 40% 34% / 0.24);
+    --glow-channel: 0 0 24px -6px hsl(var(--tint-h) var(--tint-s) 56% / 0.5);
+    --ring: hsl(var(--tint-h) var(--tint-s) 55% / 0.28);
+    --hairline: hsl(var(--tint-h) 40% 62% / 0.35);
+    --scrim: hsl(var(--tint-h) 38% 22% / 0.44);
+    --brand-grad: linear-gradient(180deg, hsl(var(--tint-h) 38% 24%), hsl(var(--tint-h) var(--tint-s) 44%));
+    --select-bg: hsl(var(--tint-h) 46% 99%);
+    --select-ink: hsl(var(--tint-h) 30% 17%);
+    --tabbar-bg: hsl(var(--tint-h) 52% 100% / 0.78);
+
+    --blur: blur(20px) saturate(150%);
     --ease: cubic-bezier(0.16, 1, 0.3, 1);
+    --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
     --radius: 18px;
     --radius-sm: 12px;
+  }
+  /* Transición suave de toda la piel cuando el Administrador mueve el selector de color. */
+  html.tinte-animado, html.tinte-animado *{
+    transition: background-color .5s var(--ease), border-color .5s var(--ease), color .5s var(--ease), box-shadow .5s var(--ease) !important;
+  }
+  @media (prefers-reduced-motion: reduce){
+    *, *::before, *::after{ animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; }
   }
 
   *{box-sizing:border-box;}
@@ -57,10 +89,13 @@
     line-height:1.45;
     -webkit-font-smoothing:antialiased;
     -webkit-tap-highlight-color:transparent;
+    color:var(--ink);
     background:
-      radial-gradient(1200px 600px at 15% -10%, rgba(41,151,255,0.16), transparent 60%),
-      radial-gradient(1000px 560px at 100% 0%, rgba(191,90,242,0.12), transparent 55%),
-      #000000;
+      radial-gradient(1200px 620px at 12% -12%, hsl(var(--tint-h) var(--tint-s) 78% / 0.55), transparent 62%),
+      radial-gradient(1000px 560px at 102% 2%, hsl(calc(var(--tint-h) + 20) 70% 82% / 0.45), transparent 58%),
+      radial-gradient(900px 700px at 50% 120%, hsl(calc(var(--tint-h) - 12) 60% 84% / 0.35), transparent 60%),
+      var(--bg);
+    background-repeat:no-repeat;
     min-height:100vh;
   }
   h1,h2,h3{font-family:inherit; letter-spacing:-0.02em; text-wrap:balance; font-weight:700;}
@@ -74,20 +109,20 @@
      fábrica ahí, mientras el texto sigue siendo casi blanco (--ink): opciones invisibles,
      blanco sobre blanco. Un fondo sólido explícito en <option> (y en <select>, por si el
      navegador reusa ese color para el desplegable) corrige esto en todos los navegadores. */
-  select{ color-scheme: dark; background-color:#1e293b; }
-  option{ background-color:#1e293b; color:#f8fafc; }
+  select{ color-scheme: light; background-color:var(--select-bg); }
+  option{ background-color:var(--select-bg); color:var(--select-ink); }
   ::selection{background:var(--channel); color:#fff;}
   ::-webkit-scrollbar{width:10px; height:10px;}
   ::-webkit-scrollbar-track{background:transparent;}
-  ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.18); border-radius:100px;}
-  ::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.28);}
+  ::-webkit-scrollbar-thumb{background:hsl(var(--tint-h) 30% 55% / 0.30); border-radius:100px;}
+  ::-webkit-scrollbar-thumb:hover{background:hsl(var(--tint-h) 34% 48% / 0.45);}
 
   #app{max-width:1180px; margin:0 auto;}
 
   @keyframes cardIn{ from{opacity:0; transform:translateY(16px) scale(0.98);} to{opacity:1; transform:translateY(0) scale(1);} }
   @keyframes pillPop{ 0%{opacity:0; transform:scale(0.7);} 60%{opacity:1; transform:scale(1.08);} 100%{transform:scale(1);} }
   @keyframes btnPop{ from{opacity:0; transform:translateY(8px) scale(0.96);} to{opacity:1; transform:translateY(0) scale(1);} }
-  @keyframes pulseGlow{ 0%,100%{box-shadow:0 4px 16px -4px rgba(41,151,255,0.5);} 50%{box-shadow:0 4px 28px -2px rgba(41,151,255,0.85);} }
+  @keyframes pulseGlow{ 0%,100%{box-shadow:0 4px 16px -4px hsl(var(--tint-h) var(--tint-s) 52% / 0.5);} 50%{box-shadow:0 6px 30px -2px hsl(var(--tint-h) var(--tint-s) 55% / 0.85);} }
   @keyframes fadeIn{ from{opacity:0;} to{opacity:1;} }
   @keyframes modalIn{ from{opacity:0; transform:translateY(24px) scale(0.97);} to{opacity:1; transform:translateY(0) scale(1);} }
   @keyframes viewIn{ from{opacity:0; transform:translateY(18px);} to{opacity:1; transform:translateY(0);} }
@@ -102,7 +137,7 @@
   }
   .brand h1{
     font-size:clamp(1.9rem, 4vw, 2.75rem); font-weight:800; display:flex; align-items:center; gap:10px;
-    background:linear-gradient(180deg, #ffffff 0%, #cfd0d6 100%);
+    background:var(--brand-grad);
     -webkit-background-clip:text; background-clip:text; color:transparent; -webkit-text-fill-color:transparent;
     letter-spacing:-0.03em; margin:0;
   }
@@ -114,13 +149,13 @@
   .btn{
     display:inline-flex; align-items:center; gap:7px;
     background:linear-gradient(180deg, var(--channel) 0%, var(--channel-dark) 100%); color:var(--channel-ink);
-    border:1px solid rgba(255,255,255,0.18); border-radius:100px;
+    border:1px solid var(--hairline); border-radius:100px;
     padding:10px 18px; font-size:0.85rem; font-weight:600;
-    cursor:pointer; transition:transform .2s var(--ease), box-shadow .2s var(--ease), background .2s ease;
-    box-shadow:0 4px 16px -4px rgba(41,151,255,0.5);
+    cursor:pointer; transition:transform .2s var(--spring), box-shadow .25s var(--ease), filter .2s ease;
+    box-shadow:0 6px 18px -6px hsl(var(--tint-h) var(--tint-s) 45% / 0.5);
   }
-  .btn:hover{transform:translateY(-1px) scale(1.02); box-shadow:0 8px 24px -6px rgba(41,151,255,0.65);}
-  .btn:active{transform:translateY(1px) scale(0.99);}
+  .btn:hover{transform:translateY(-2px) scale(1.02); box-shadow:0 12px 28px -8px hsl(var(--tint-h) var(--tint-s) 45% / 0.62); filter:brightness(1.05);}
+  .btn:active{transform:translateY(1px) scale(0.985);}
   .btn-ghost{
     background:var(--surface); color:var(--ink); border:1px solid var(--border-strong);
     border-radius:100px; padding:9px 16px; font-size:0.82rem; font-weight:600; cursor:pointer;
@@ -165,7 +200,7 @@
     transition:transform .3s var(--ease), border-color .3s ease, box-shadow .3s ease;
     animation:cardIn .5s var(--ease) both;
   }
-  .stat-tile:hover{transform:scale(1.02); border-color:var(--border-strong); box-shadow:0 20px 44px -18px rgba(0,0,0,0.75), 0 0 28px -8px rgba(41,151,255,0.3);}
+  .stat-tile:hover{transform:translateY(-3px) scale(1.02); border-color:var(--border-strong); box-shadow:var(--shadow-lg), 0 0 30px -10px var(--ring);}
   .stat-tile .label{font-size:0.7rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); font-weight:600;}
   .stat-tile .value{font-family:'IBM Plex Mono',monospace; font-size:1.6rem; font-weight:700; margin-top:6px; color:var(--ink);}
   .stat-tile.accent .value{color:var(--channel);}
@@ -182,7 +217,7 @@
   .day-label{display:flex; align-items:center; gap:8px; font-weight:600;}
   .day-label input[type="date"]{
     border:1px solid var(--border); border-radius:8px; padding:7px 9px; font-size:0.85rem;
-    background:var(--surface-2); color:var(--ink); color-scheme:dark;
+    background:var(--surface-2); color:var(--ink); color-scheme:light;
   }
   .week-strip{display:flex; gap:6px; margin-left:auto; overflow-x:auto; max-width:100%;}
   .day-chip{
@@ -215,12 +250,12 @@
     animation:cardIn .6s var(--ease) both;
   }
   .home-card::before{
-    content:''; position:absolute; inset:-40% -40% auto auto; width:220px; height:220px;
-    background:radial-gradient(circle, rgba(41,151,255,0.35), transparent 70%);
-    opacity:0; transition:opacity .35s ease; z-index:-1; pointer-events:none;
+    content:''; position:absolute; inset:-40% -40% auto auto; width:240px; height:240px;
+    background:radial-gradient(circle, hsl(var(--tint-h) var(--tint-s) 62% / 0.45), transparent 70%);
+    opacity:0; transition:opacity .4s ease, transform .5s var(--ease); transform:scale(0.7); z-index:-1; pointer-events:none;
   }
-  .home-card:hover{transform:translateY(-4px) scale(1.02); border-color:var(--border-strong); box-shadow:0 30px 60px -20px rgba(0,0,0,0.7), var(--glow-channel);}
-  .home-card:hover::before{opacity:1;}
+  .home-card:hover{transform:translateY(-5px) scale(1.02); border-color:var(--border-strong); box-shadow:var(--shadow-lg), var(--glow-channel);}
+  .home-card:hover::before{opacity:1; transform:scale(1);}
   .home-icon{font-size:1.9rem;}
   .home-card h2{font-size:1.08rem; margin:0; color:var(--ink);}
   .home-card p{font-size:0.86rem; color:var(--muted); flex:1; line-height:1.5;}
@@ -247,9 +282,9 @@
   /* .form-group select necesita más especificidad que la regla de arriba para que su fondo
      quede sólido (no el --surface-2 translúcido) — ver la nota junto a "select{...}" más
      arriba sobre por qué la lista desplegable necesita un fondo sólido explícito. */
-  .form-group select{ background-color:#1e293b; color:#f8fafc; }
+  .form-group select{ background-color:var(--select-bg); color:var(--select-ink); }
   .form-group input:focus, .form-group select:focus, .form-group textarea:focus{
-    border-color:var(--channel); box-shadow:0 0 0 4px rgba(41,151,255,0.22);
+    border-color:var(--channel); box-shadow:0 0 0 4px var(--ring);
   }
   .form-row{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
   @media (max-width:480px){ .form-row{grid-template-columns:1fr;} }
@@ -279,9 +314,9 @@
   /* ---------- Tabs de vista (navbar flotante estilo Dynamic Island) ---------- */
   .view-tabs{
     display:flex; gap:4px; margin:0 auto 22px; padding:6px;
-    background:rgba(20,20,22,0.72); border:1px solid var(--border-strong); border-radius:100px;
+    background:var(--tabbar-bg); border:1px solid var(--border-strong); border-radius:100px;
     backdrop-filter:var(--blur); -webkit-backdrop-filter:var(--blur);
-    box-shadow:0 12px 32px -12px rgba(0,0,0,0.7);
+    box-shadow:var(--shadow-pop);
     width:fit-content; max-width:100%; overflow-x:auto;
     position:sticky; top:12px; z-index:50;
   }
@@ -318,13 +353,13 @@
   .btn-logout:hover{border-color:var(--bad); color:var(--bad);}
   @media (max-width:860px){ .session-chip{flex:1 1 100%; justify-content:space-between;} }
   .empresa-switch{display:flex; align-items:center; gap:7px; padding:5px 12px; background:var(--surface); border:1px solid var(--border); border-radius:100px; backdrop-filter:var(--blur); -webkit-backdrop-filter:var(--blur);}
-  .empresa-switch select{padding:4px 8px; font-size:0.78rem; font-weight:600; border-radius:100px; border:1px solid var(--border-strong); background-color:#1e293b; color:#f8fafc;}
+  .empresa-switch select{padding:4px 8px; font-size:0.78rem; font-weight:600; border-radius:100px; border:1px solid var(--border-strong); background-color:var(--select-bg); color:var(--select-ink);}
 
   /* ---------- Modal de acceso del personal (correo + contraseña, sin Supabase Auth) ---------- */
   .auth-modal{max-width:400px; text-align:center; position:relative;}
   .auth-brand{
     font-size:1.6rem; font-weight:800; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:2px;
-    background:linear-gradient(180deg, #ffffff 0%, #cfd0d6 100%);
+    background:var(--brand-grad);
     -webkit-background-clip:text; background-clip:text; color:transparent; -webkit-text-fill-color:transparent;
   }
   .auth-sub{font-size:0.82rem; color:var(--muted); margin:0 0 20px;}
@@ -398,7 +433,7 @@
     backdrop-filter:var(--blur); -webkit-backdrop-filter:var(--blur);
   }
   .rango-custom{display:flex; align-items:center; gap:6px; font-size:0.82rem; color:var(--muted);}
-  .rango-custom input{border:1px solid var(--border); border-radius:8px; padding:6px 8px; font-size:0.8rem; background:var(--surface-2); color:var(--ink); color-scheme:dark;}
+  .rango-custom input{border:1px solid var(--border); border-radius:8px; padding:6px 8px; font-size:0.8rem; background:var(--surface-2); color:var(--ink); color-scheme:light;}
   .cont-tabla-head{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:6px;}
   .cont-tabla-actions{display:flex; gap:8px; flex-wrap:wrap;}
   .copy-status{font-size:0.78rem; color:var(--good); min-height:1.1em; margin:2px 0;}
@@ -432,7 +467,7 @@
     font-size:0.76rem; font-weight:600; cursor:pointer; color:var(--muted); transition:all .2s var(--ease);
   }
   .filter-btn:hover{border-color:var(--channel); color:var(--ink);}
-  .filter-btn.active{background:var(--ink); color:#000; border-color:var(--ink);}
+  .filter-btn.active{background:var(--ink); color:var(--bg); border-color:var(--ink);}
 
   .timeline-container{display:flex; flex-direction:column; gap:10px;}
   .empty-state{
@@ -447,7 +482,7 @@
     backdrop-filter:var(--blur); -webkit-backdrop-filter:var(--blur);
     animation:cardIn .5s var(--ease) both;
   }
-  .order-card:hover{transform:scale(1.015); box-shadow:0 20px 44px -18px rgba(0,0,0,0.75), 0 0 32px -8px rgba(41,151,255,0.35);}
+  .order-card:hover{transform:translateY(-2px) scale(1.012); box-shadow:var(--shadow-lg), 0 0 32px -10px var(--ring);}
   .order-card.diff-facil{border-left-color:var(--good);}
   .order-card.diff-media{border-left-color:var(--warn);}
   .order-card.diff-dificil{border-left-color:var(--bad);}
@@ -565,15 +600,15 @@
 
   /* ---- Modal (backup) ---- */
   .modal-backdrop{
-    position:fixed; inset:0; background:rgba(0,0,0,0.72); display:flex; align-items:center; justify-content:center;
-    z-index:200; padding:20px; backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+    position:fixed; inset:0; background:var(--scrim); display:flex; align-items:center; justify-content:center;
+    z-index:200; padding:20px; backdrop-filter:blur(6px) saturate(140%); -webkit-backdrop-filter:blur(6px) saturate(140%);
     animation:fadeIn .25s ease both;
   }
   .modal-backdrop[hidden]{display:none;}
   .modal{
     background:var(--surface-solid); border:1px solid var(--border-strong); border-radius:var(--radius); padding:24px; max-width:520px; width:100%;
-    box-shadow:0 40px 80px -20px rgba(0,0,0,0.8); max-height:88vh; overflow:auto;
-    animation:modalIn .35s var(--ease) both;
+    box-shadow:0 40px 80px -24px hsl(var(--tint-h) 40% 28% / 0.4); max-height:88vh; overflow:auto;
+    animation:modalIn .38s var(--spring) both;
   }
   .modal h3{font-size:1.08rem; margin-bottom:6px; color:var(--ink);}
   .modal p{font-size:0.82rem; color:var(--muted); margin-bottom:10px;}
@@ -587,6 +622,97 @@
   .modal-status{font-size:0.78rem; margin-top:-4px; margin-bottom:10px; min-height:1em;}
   .modal-status.ok{color:var(--good);}
   .modal-status.err{color:var(--bad);}
+
+  /* ---- Rueda de color (Ajustes → 🎨 Color de la empresa) ---- */
+  .color-panel-grid{display:flex; gap:26px; flex-wrap:wrap; align-items:center;}
+  .rueda-color{
+    position:relative; width:190px; height:190px; border-radius:50%; flex:0 0 auto;
+    background:
+      radial-gradient(circle at center, #ffffff 2%, hsl(0 0% 100% / 0) 72%),
+      conic-gradient(from 0deg,
+        hsl(0 85% 56%), hsl(60 82% 50%), hsl(120 62% 44%), hsl(180 66% 45%),
+        hsl(240 78% 60%), hsl(300 72% 56%), hsl(360 85% 56%));
+    box-shadow: var(--shadow), inset 0 0 0 1px var(--border-strong);
+    cursor:crosshair; touch-action:none;
+  }
+  .rueda-thumb{
+    position:absolute; width:24px; height:24px; border-radius:50%; left:50%; top:50%;
+    border:3px solid #fff; transform:translate(-50%,-50%); pointer-events:none;
+    box-shadow:0 2px 10px hsl(var(--tint-h) 40% 28% / 0.5), 0 0 0 1px var(--border-strong);
+    transition:box-shadow .18s ease;
+  }
+  .rueda-color:active .rueda-thumb{ box-shadow:0 3px 16px hsl(var(--tint-h) var(--tint-s) 45% / 0.6), 0 0 0 2px #fff; }
+  .color-side{display:flex; flex-direction:column; gap:11px; min-width:190px; flex:1 1 190px;}
+  .color-swatch-row{display:flex; align-items:center; gap:10px;}
+  .color-swatch{width:46px; height:46px; border-radius:12px; box-shadow:var(--shadow), inset 0 0 0 1px var(--border-strong);}
+  .color-sat-row label{font-size:0.74rem; color:var(--muted); font-weight:600; display:block; margin-bottom:5px;}
+  .color-sat-row input[type="range"]{width:100%; accent-color:var(--channel); cursor:pointer;}
+
+  /* ============ Animaciones ============ */
+  /* Ripple al hacer clic (lo inyecta JS: ver init de ripples). */
+  @keyframes rippleOut{ from{transform:scale(0); opacity:0.5;} to{transform:scale(2.6); opacity:0;} }
+  .ripple-host{position:relative; overflow:hidden;}
+  .ripple{
+    position:absolute; border-radius:50%; pointer-events:none; width:16px; height:16px;
+    margin:-8px 0 0 -8px; background:currentColor; opacity:0.35;
+    animation:rippleOut .6s var(--ease) forwards;
+  }
+  .btn .ripple, .view-tab.active .ripple, .chip.selected .ripple, .day-chip.selected .ripple{ background:#fff; }
+
+  /* Interacciones finas */
+  .btn-ghost:active, .btn-icon:active, .btn-mini:active, .filter-btn:active, .sub-tab:active, .chip:active, .day-chip:active{ transform:scale(0.95); }
+  .view-tab{ position:relative; }
+  .view-tab:hover{ transform:translateY(-1px); }
+  .view-tab.active{ animation:tabPop .3s var(--spring) both; }
+  @keyframes tabPop{ from{transform:scale(0.9);} to{transform:scale(1);} }
+  .stat-tile .value{ transition:color .3s ease; }
+  .rol-pill{ transition:transform .2s var(--spring); }
+  .session-chip:hover .rol-pill{ transform:scale(1.06); }
+  .empresa-switch, .session-chip{ transition:box-shadow .3s ease, border-color .3s ease; }
+  .empresa-switch:hover{ border-color:var(--border-strong); box-shadow:var(--glow-channel); }
+
+  /* Cliente esperando la oferta del Hub Central — radar en expansión */
+  @keyframes radarPulse{
+    0%{ box-shadow:0 0 0 0 var(--ring), var(--shadow); }
+    70%{ box-shadow:0 0 0 18px hsl(var(--tint-h) var(--tint-s) 55% / 0), var(--shadow); }
+    100%{ box-shadow:0 0 0 0 hsl(var(--tint-h) var(--tint-s) 55% / 0), var(--shadow); }
+  }
+  @keyframes sweep{ from{transform:translateX(-120%);} to{transform:translateX(120%);} }
+  .panel.hub-esperando{
+    border-color:var(--border-strong); position:relative; overflow:hidden;
+    animation:radarPulse 2.4s ease-out infinite, cardIn .5s var(--ease) both;
+  }
+  .panel.hub-esperando::after{
+    content:''; position:absolute; inset:0; pointer-events:none;
+    background:linear-gradient(100deg, transparent 40%, hsl(var(--tint-h) var(--tint-s) 70% / 0.18) 50%, transparent 60%);
+    animation:sweep 2.4s var(--ease) infinite;
+  }
+  .hub-espera-badge{
+    display:inline-flex; align-items:center; gap:6px; font-weight:700; color:var(--channel);
+    background:color-mix(in srgb, var(--channel) 14%, transparent);
+    border:1px solid color-mix(in srgb, var(--channel) 34%, transparent);
+    border-radius:100px; padding:3px 10px; font-size:0.74rem;
+  }
+  .hub-espera-badge::before{
+    content:''; width:7px; height:7px; border-radius:50%; background:var(--channel);
+    box-shadow:0 0 0 0 var(--channel); animation:blip 1.4s ease-out infinite;
+  }
+  @keyframes blip{ 0%{box-shadow:0 0 0 0 color-mix(in srgb, var(--channel) 70%, transparent);} 100%{box-shadow:0 0 0 9px hsl(var(--tint-h) var(--tint-s) 55% / 0);} }
+  .hub-espera-hint{ display:block; margin-top:4px; font-size:0.72rem; color:var(--muted); font-style:italic; }
+
+  /* Cliente: solicitud recién adjudicada — celebración breve */
+  @keyframes celebrar{ 0%{transform:scale(0.96); box-shadow:0 0 0 0 var(--good-bg), var(--shadow);} 55%{transform:scale(1.012); box-shadow:0 0 0 12px color-mix(in srgb, var(--good) 0%, transparent), 0 20px 44px -18px color-mix(in srgb, var(--good) 45%, transparent);} 100%{transform:scale(1); box-shadow:var(--shadow);} }
+  .panel.hub-adjudicado{ animation:celebrar .8s var(--spring) both; border-color:color-mix(in srgb, var(--good) 45%, transparent); }
+
+  /* Chofer "Regresando a Base" — camión de vuelta: barra izquierda viva + flecha */
+  @keyframes volverBase{ 0%,100%{ border-left-color:var(--channel); } 50%{ border-left-color:hsl(calc(var(--tint-h) + 14) 68% 44%); } }
+  @keyframes flechaVuelve{ 0%,100%{ transform:translateX(0); opacity:0.65; } 50%{ transform:translateX(-4px); opacity:1; } }
+  .order-card.regresando{ animation:cardIn .5s var(--ease) both, volverBase 1.8s ease-in-out infinite; box-shadow:var(--shadow), inset 3px 0 12px -6px var(--channel); }
+  .status-Regresando-a-Base{ position:relative; overflow:hidden; }
+  .status-Regresando-a-Base::before{ content:'←'; display:inline-block; margin-right:5px; font-weight:800; animation:flechaVuelve 1s ease-in-out infinite; }
+
+  /* Aparición suave de filas nuevas en tablas y listas del Hub */
+  #hubListaWrap .panel{ animation:cardIn .45s var(--ease) both; }
 
   @media print{
     :root{
@@ -1775,6 +1901,49 @@
   }
 
   /* ==========================================================================
+     Tinte de marca por empresa afiliada (Ajustes → "🎨 Color de la empresa").
+     Solo cambia --tint-h / --tint-s en <html>; toda la piel de la web se
+     rederiva desde el CSS (:root). Por defecto (clientes, sin sesión, y la
+     Sede Central) manda el celeste pastel del :root — TINTE_DEFECTO. Cada
+     empresa asociada puede fijar su propio tono con la rueda de color, y se
+     aplica cuando su personal tiene sesión iniciada en ese espacio.
+     Guardado solo en este navegador (localStorage), como plantillaEmpresas.
+     ========================================================================== */
+  var TINTE_EMPRESAS_KEY = 'kunturmasha_tinte_empresas_v1';
+  var TINTE_DEFECTO = { h: 202, s: 62 };
+  function cargarTinteEmpresas(){
+    try{ var o = JSON.parse(localStorage.getItem(TINTE_EMPRESAS_KEY) || '{}'); return (o && typeof o === 'object') ? o : {}; }
+    catch(e){ return {}; }
+  }
+  var tinteEmpresas = cargarTinteEmpresas();
+  function guardarTinteEmpresas(){
+    try{ localStorage.setItem(TINTE_EMPRESAS_KEY, JSON.stringify(tinteEmpresas)); }catch(e){}
+  }
+  function tinteDeEmpresa(empresaId){
+    var t = tinteEmpresas[empresaId];
+    if(t && isFinite(t.h) && isFinite(t.s)) return { h: t.h, s: t.s };
+    return { h: TINTE_DEFECTO.h, s: TINTE_DEFECTO.s };
+  }
+  // Aplica un tinte {h,s} a <html>. Si no se pasa uno, decide según contexto:
+  // con sesión de personal en una empresa asociada → el tinte de esa empresa;
+  // en cualquier otro caso (cliente, Sede Central) → el celeste por defecto.
+  function aplicarTinte(t){
+    var root = document.documentElement;
+    root.style.setProperty('--tint-h', String(t.h));
+    root.style.setProperty('--tint-s', t.s + '%');
+  }
+  function aplicarTinteSegunContexto(animar){
+    var empresa = buscarEmpresa(empresaActivaId);
+    var usaEmpresa = (typeof usuarioActual !== 'undefined' && usuarioActual) && !empresa.esSedeCentral;
+    var t = usaEmpresa ? tinteDeEmpresa(empresa.id) : { h: TINTE_DEFECTO.h, s: TINTE_DEFECTO.s };
+    if(animar){
+      document.documentElement.classList.add('tinte-animado');
+      setTimeout(function(){ document.documentElement.classList.remove('tinte-animado'); }, 650);
+    }
+    aplicarTinte(t);
+  }
+
+  /* ==========================================================================
      Política de pagos configurable por empresa (Mi Perfil del Administrador, ver
      renderConfigPagos()). Antes el sueldo de chofer/ayudante por viaje era fijo y
      escalonado para TODAS las empresas (ver manoDeObra()) y la comisión de promotor era
@@ -2203,6 +2372,7 @@
     }
     poblarSelectChofer();
     poblarSelectPromotor();
+    aplicarTinteSegunContexto(true);
     actualizarUIPagosSegunEmpresa();
     renderTodo();
     if(vistaActual === 'contabilidad') renderContabilidad();
@@ -2679,7 +2849,7 @@
         '<button class="btn-icon danger" data-action="eliminar" title="Eliminar">🗑</button>' +
       '</div>';
     return '' +
-      '<div class="order-card ' + diffClass + (fallido ? ' fallido' : '') + (p.id === editandoId ? ' editing' : '') + '" data-id="' + p.id + '">' +
+      '<div class="order-card ' + diffClass + (fallido ? ' fallido' : '') + (p.estado === 'Regresando a Base' ? ' regresando' : '') + (p.id === editandoId ? ' editing' : '') + '" data-id="' + p.id + '">' +
         '<div class="order-head">' +
           '<div class="order-time">🕒 ' + formatearHora12(p.horaInicio) + ' – ' + formatearHora12(p.horaFin) + '</div>' +
           '<div class="order-price">S/. ' + Number(p.precio).toFixed(2) + '</div>' +
@@ -4500,10 +4670,17 @@
       // Mientras está Abierta, el cliente ve cada oferta con su botón "Aceptar Oferta
       // Ahora" — no hace falta esperar los 30 min (estilo InDrive); el temporizador solo
       // queda como límite máximo si nadie elige antes.
-      if(s.estado === 'Abierta') estadoHtml = '⏳ En subasta — cierra en <span class="cuenta-regresiva mono" data-fin="' + s.horaFin + '">' + formatCuentaRegresiva(new Date(s.horaFin).getTime() - Date.now()) + '</span>' + tablaOfertasCliente(s.id);
-      else if(s.estado === 'Adjudicada') estadoHtml = '✅ Adjudicado a <strong>' + escapeHtml(buscarEmpresa(s.empresaGanadoraId).nombre) + '</strong> — ' + formatMoneda(s.ofertaGanadoraPrecio) + ', entrega en ' + s.ofertaGanadoraTiempo + ' min. Te contactan al ' + escapeHtml(s.telefono || '');
+      var claseEstado = '';
+      if(s.estado === 'Abierta'){
+        estadoHtml = '<span class="hub-espera-badge">📡 En subasta</span> — cierra en <span class="cuenta-regresiva mono" data-fin="' + s.horaFin + '">' + formatCuentaRegresiva(new Date(s.horaFin).getTime() - Date.now()) + '</span><span class="hub-espera-hint">Buscando la mejor oferta entre las empresas de la red…</span>' + tablaOfertasCliente(s.id);
+        claseEstado = ' hub-esperando';
+      }
+      else if(s.estado === 'Adjudicada'){
+        estadoHtml = '✅ Adjudicado a <strong>' + escapeHtml(buscarEmpresa(s.empresaGanadoraId).nombre) + '</strong> — ' + formatMoneda(s.ofertaGanadoraPrecio) + ', entrega en ' + s.ofertaGanadoraTiempo + ' min. Te contactan al ' + escapeHtml(s.telefono || '');
+        claseEstado = ' hub-adjudicado';
+      }
       else estadoHtml = '✖️ Cerrada sin ofertas — intenta de nuevo o escríbenos por WhatsApp';
-      return '<div class="panel" style="margin-bottom:12px;"><div class="order-client">' + escapeHtml(s.ubicacion) + ' · ' + s.volumenM3 + ' m³ · ' + escapeHtml(s.tipoDescarga) + '</div><p class="campo-nota" style="margin:6px 0 0;">' + estadoHtml + '</p></div>';
+      return '<div class="panel' + claseEstado + '" style="margin-bottom:12px;"><div class="order-client">' + escapeHtml(s.ubicacion) + ' · ' + s.volumenM3 + ' m³ · ' + escapeHtml(s.tipoDescarga) + '</div><p class="campo-nota" style="margin:6px 0 0;">' + estadoHtml + '</p></div>';
     }).join('');
     return '<h3 style="font-size:0.9rem; margin:20px 0 10px;">Tus solicitudes</h3>' + filasPropias;
   }
@@ -4756,6 +4933,7 @@
     // de la sesión anterior (ver actualizarSelectorRol()/actualizarSelectorEmpresa()).
     actualizarSesionUI();
     actualizarSelectorEmpresa();
+    aplicarTinteSegunContexto(true);
     irAVista(VISTAS_POR_ROL[interno].defaultView);
     // Ver la misma lógica en cancelarEdicion(): si quien entra es un promotor, su propia
     // persona ya aparece elegida en "Conseguido por" desde el primer vistazo al formulario.
@@ -4772,6 +4950,7 @@
     actualizarSesionUI();
     actualizarSelectorEmpresa();
     aplicarRol('cliente');
+    aplicarTinteSegunContexto(true);
     irAVista(VISTAS_POR_ROL.cliente.defaultView);
   }
 
@@ -4906,18 +5085,24 @@
     if(!esAdmin){ wrap.innerHTML = ''; wrap.dataset.montado = ''; return; }
     // Reconstruye el cascarón si nunca se montó o si cambió quién lo mira (el Directorio
     // Central solo debe existir en el DOM cuando lo ve la cuenta maestra).
-    var quierePiero = esPiero ? '1' : '0';
-    if(wrap.dataset.montado !== '1' || wrap.dataset.dc !== quierePiero){
-      wrap.innerHTML = '<div id="pePanelHost"></div>' + (esPiero ? '<div id="dcHost"></div>' : '');
+    var esSede = buscarEmpresa(empresaActivaId).esSedeCentral;
+    var ctx = (esPiero ? '1' : '0') + (esSede ? 'S' : 'A');
+    if(wrap.dataset.montado !== '1' || wrap.dataset.dc !== ctx){
+      wrap.innerHTML =
+        '<div id="pePanelHost"></div>' +
+        (esSede ? '' : '<div id="colorPanelHost"></div>') +
+        (esPiero ? '<div id="dcHost"></div>' : '');
       wrap.dataset.montado = '1';
-      wrap.dataset.dc = quierePiero;
+      wrap.dataset.dc = ctx;
       if(esPiero) montarDirectorioCentral(document.getElementById('dcHost'));
     }
-    // El panel de personal se reconstruye en cada entrada a Ajustes y en cada cambio de
-    // empresa (su tabla y su pool de correos son estado "vivo"). Sus inputs son efímeros y
-    // no hay repintados en segundo plano que puedan pisar lo que se esté tecleando.
+    // El panel de personal y el de color se reconstruyen en cada entrada a Ajustes y en cada
+    // cambio de empresa (su estado es "vivo"). Sus inputs son efímeros y no hay repintados en
+    // segundo plano que puedan pisar lo que se esté tecleando.
     var host = document.getElementById('pePanelHost');
     if(host){ host.innerHTML = panelPersonalEmpresaHtml(); activarPanelPersonalEmpresa(); }
+    var colorHost = document.getElementById('colorPanelHost');
+    if(colorHost){ colorHost.innerHTML = panelColorEmpresaHtml(); activarPanelColorEmpresa(); }
     if(esPiero) renderDirectorioCentralFiltrado();
   }
 
@@ -5140,6 +5325,90 @@
     if(vistaActual === 'perfil') renderPerfil();
     if(vistaActual === 'contabilidad') renderContabilidad();
     renderLista();
+  }
+
+  // ---- Panel "🎨 Color de la empresa" (Ajustes) — rueda HSV: el ángulo es el tono (hue,
+  // continuo → millones de matices) y el radio la intensidad (saturación). Solo cambia
+  // --tint-h / --tint-s; toda la piel se rederiva desde el CSS. Se guarda por empresa
+  // (tinteEmpresas) y se aplica cuando su personal tiene sesión en ese espacio. ----
+  function panelColorEmpresaHtml(){
+    var empresa = buscarEmpresa(empresaActivaId);
+    var t = tinteDeEmpresa(empresa.id);
+    return '<div class="panel" style="margin-bottom:16px;">' +
+      '<h2>🎨 Color de la empresa — ' + escapeHtml(empresa.nombre) + '</h2>' +
+      '<p class="campo-nota" style="margin:0 0 14px;">Arrastra el punto por la rueda para elegir el tono de tu espacio: hacia afuera = más intenso, hacia el centro = más pastel. Se aplica a todos tus paneles, botones y acentos manteniendo la armonía. Los clientes y la web general siguen en el celeste por defecto.</p>' +
+      '<div class="color-panel-grid">' +
+        '<div class="rueda-color" id="ruedaColor"><div class="rueda-thumb" id="ruedaThumb"></div></div>' +
+        '<div class="color-side">' +
+          '<div class="color-swatch-row"><span class="color-swatch" id="colorSwatch"></span><span class="mono" id="colorValor" style="font-size:0.78rem; color:var(--muted);"></span></div>' +
+          '<div class="color-sat-row"><label>Intensidad</label><input type="range" id="colorSat" min="18" max="92" value="' + Math.round(t.s) + '"></div>' +
+          '<button type="button" class="btn-ghost" id="colorReset">↺ Volver al celeste por defecto</button>' +
+          '<p class="modal-status ok" id="colorStatus" style="min-height:1em;"></p>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+  function activarPanelColorEmpresa(){
+    var rueda = document.getElementById('ruedaColor');
+    if(!rueda) return;
+    var thumb = document.getElementById('ruedaThumb');
+    var swatch = document.getElementById('colorSwatch');
+    var valor = document.getElementById('colorValor');
+    var sat = document.getElementById('colorSat');
+    var empresa = buscarEmpresa(empresaActivaId);
+    var estado = tinteDeEmpresa(empresa.id); // { h, s } — copia mutable local
+    function pintar(){
+      var rect = rueda.getBoundingClientRect();
+      var R = rect.width / 2;
+      var rad = estado.h * Math.PI / 180;
+      var dist = Math.min(1, estado.s / 100) * (R - 12);
+      thumb.style.left = (R + dist * Math.sin(rad)) + 'px';
+      thumb.style.top = (R - dist * Math.cos(rad)) + 'px';
+      var css = 'hsl(' + estado.h + ' ' + estado.s + '% 45%)';
+      thumb.style.background = css;
+      if(swatch) swatch.style.background = css;
+      if(valor) valor.textContent = 'Tono ' + Math.round(estado.h) + '°  ·  Intensidad ' + Math.round(estado.s) + '%';
+    }
+    function desdeEvento(e){
+      var rect = rueda.getBoundingClientRect();
+      var R = rect.width / 2;
+      var x = (e.clientX - rect.left) - R;
+      var y = (e.clientY - rect.top) - R;
+      var ang = Math.atan2(x, -y) * 180 / Math.PI;
+      if(ang < 0) ang += 360;
+      estado.h = Math.round(ang * 10) / 10;
+      estado.s = Math.max(18, Math.min(92, Math.round(Math.sqrt(x * x + y * y) / (R - 12) * 100)));
+      if(sat) sat.value = estado.s;
+      aplicarTinte(estado);
+      pintar();
+    }
+    function guardar(){
+      tinteEmpresas[empresa.id] = { h: estado.h, s: estado.s };
+      guardarTinteEmpresas();
+      var st = document.getElementById('colorStatus');
+      if(st) st.textContent = '✅ Color guardado para ' + empresa.nombre + '.';
+    }
+    var arrastrando = false;
+    rueda.addEventListener('pointerdown', function(e){ arrastrando = true; try{ rueda.setPointerCapture(e.pointerId); }catch(x){} desdeEvento(e); });
+    rueda.addEventListener('pointermove', function(e){ if(arrastrando) desdeEvento(e); });
+    rueda.addEventListener('pointerup', function(){ if(arrastrando){ arrastrando = false; guardar(); } });
+    rueda.addEventListener('pointercancel', function(){ arrastrando = false; });
+    if(sat){
+      sat.addEventListener('input', function(){ estado.s = Number(sat.value); aplicarTinte(estado); pintar(); });
+      sat.addEventListener('change', guardar);
+    }
+    var reset = document.getElementById('colorReset');
+    if(reset) reset.addEventListener('click', function(){
+      delete tinteEmpresas[empresa.id];
+      guardarTinteEmpresas();
+      estado.h = TINTE_DEFECTO.h; estado.s = TINTE_DEFECTO.s;
+      if(sat) sat.value = estado.s;
+      aplicarTinte(estado);
+      pintar();
+      var st = document.getElementById('colorStatus');
+      if(st) st.textContent = '↺ Restablecido al celeste por defecto.';
+    });
+    requestAnimationFrame(pintar); // la rueda ya tiene tamaño en el DOM
   }
   // Repinta solo la tabla de resultados del Directorio Central según los filtros activos —
   // separado de renderAjustes() para no reconstruir los controles (y perder el foco de
@@ -5463,9 +5732,34 @@
     } else {
       actualizarSesionUI();
       aplicarRol('cliente');
+      aplicarTinteSegunContexto(false);
     }
     if(supa) iniciarSupabase();
   }
+
+  // ---- Ripple universal al hacer clic en controles interactivos (delegado en document,
+  // una sola vez) — funciona también en elementos repintados con innerHTML. Respeta
+  // prefers-reduced-motion (el @media de arriba anula la animación). ----
+  (function initRipples(){
+    var SEL = '.btn, .btn-ghost, .btn-icon, .btn-mini, .view-tab, .sub-tab, .chip, .day-chip, .filter-btn, .home-card, .rol-pill';
+    document.addEventListener('pointerdown', function(e){
+      var el = e.target.closest && e.target.closest(SEL);
+      if(!el || el.disabled) return;
+      var cs = getComputedStyle(el);
+      if(cs.position === 'static') el.style.position = 'relative';
+      el.style.overflow = 'hidden';
+      var rect = el.getBoundingClientRect();
+      var span = document.createElement('span');
+      span.className = 'ripple';
+      span.style.left = (e.clientX - rect.left) + 'px';
+      span.style.top = (e.clientY - rect.top) + 'px';
+      var d = Math.max(rect.width, rect.height);
+      span.style.width = span.style.height = d + 'px';
+      span.style.marginLeft = span.style.marginTop = (-d / 2) + 'px';
+      el.appendChild(span);
+      setTimeout(function(){ span.remove(); }, 620);
+    }, { passive: true });
+  })();
 
   document.getElementById('fecha').value = fechaSeleccionada;
   togglePiso();
