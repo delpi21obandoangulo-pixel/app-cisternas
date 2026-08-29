@@ -1436,19 +1436,17 @@
     { email: 'chofer@gotadorada.pe', password: 'chofer2026', rol: 'Chofer', nombre: 'Chofer Gota Dorada 1', personaId: 'chofer-gotadorada-1', empresaId: 'gota-dorada' },
     { email: 'admin@cisternaselvalle.pe', password: 'admin2026', rol: 'Administrador', nombre: 'Admin Cisternas El Valle', personaId: 'admin-cisternaselvalle', empresaId: 'cisternas-el-valle' },
     { email: 'chofer@cisternaselvalle.pe', password: 'chofer2026', rol: 'Chofer', nombre: 'Chofer Cisternas El Valle 1', personaId: 'chofer-cisternaselvalle-1', empresaId: 'cisternas-el-valle' },
-    // Pozo Cangrejo Loco — segunda empresa asociada con plantilla completa (como Kunturmasha):
-    // 3 personas con cuenta de Admin y de Chofer emparejadas + 3 promotores. Acceso totalmente
-    // independiente (empresaId fijo, sin accesoGlobal) — nunca comparte datos con Kunturmasha
-    // ni con ninguna otra empresa (ver actualizarSelectorEmpresa()).
-    { email: 'admin1@pozocangrejoloco.pe', password: 'admin2026', rol: 'Administrador', nombre: 'Marcos (Admin)', parejaEmail: 'chofer1@pozocangrejoloco.pe', personaId: 'pcl-marcos', empresaId: 'pozo-cangrejo-loco' },
-    { email: 'admin2@pozocangrejoloco.pe', password: 'admin2026', rol: 'Administrador', nombre: 'Luis (Admin)', personaId: 'pcl-luis', empresaId: 'pozo-cangrejo-loco' },
-    { email: 'admin3@pozocangrejoloco.pe', password: 'admin2026', rol: 'Administrador', nombre: 'Diego (Admin)', personaId: 'pcl-diego', empresaId: 'pozo-cangrejo-loco' },
-    { email: 'chofer1@pozocangrejoloco.pe', password: 'chofer2026', rol: 'Chofer', nombre: 'Marcos (Chofer)', parejaEmail: 'admin1@pozocangrejoloco.pe', personaId: 'pcl-marcos', empresaId: 'pozo-cangrejo-loco' },
-    { email: 'chofer2@pozocangrejoloco.pe', password: 'chofer2026', rol: 'Chofer', nombre: 'Luis (Chofer)', personaId: 'pcl-luis', empresaId: 'pozo-cangrejo-loco' },
-    { email: 'chofer3@pozocangrejoloco.pe', password: 'chofer2026', rol: 'Chofer', nombre: 'Diego (Chofer)', personaId: 'pcl-diego', empresaId: 'pozo-cangrejo-loco' },
-    { email: 'promotor1@pozocangrejoloco.pe', password: 'promotor2026', rol: 'Promotor', nombre: 'Carla (Promotora)', personaId: 'pcl-carla', empresaId: 'pozo-cangrejo-loco' },
-    { email: 'promotor2@pozocangrejoloco.pe', password: 'promotor2026', rol: 'Promotor', nombre: 'Nadia (Promotora)', personaId: 'pcl-nadia', empresaId: 'pozo-cangrejo-loco' },
-    { email: 'promotor3@pozocangrejoloco.pe', password: 'promotor2026', rol: 'Promotor', nombre: 'Promotor PCL 3', personaId: 'pcl-promotor3', empresaId: 'pozo-cangrejo-loco' }
+    // Pozo Cangrejo Loco — segunda empresa asociada. Arranca SIN personal confirmado: su
+    // Administrador arma la plantilla desde Ajustes → "Personal de la empresa" eligiendo
+    // correos de este pool (o escribiendo uno nuevo), poniéndoles nombre y roles. Hasta que
+    // los confirme, no aparecen en Despacho, Agenda, Contabilidad ni billeteras (contabilidad
+    // en 0). Estos correos son solo el pool disponible; el aislamiento por empresaId sigue
+    // siendo estricto (ver actualizarSelectorEmpresa() y plantillaEmpresas más abajo).
+    { email: 'admin1@pozocangrejoloco.pe', password: 'admin2026', rol: 'Administrador', nombre: 'Admin 1 (Pozo Cangrejo Loco)', empresaId: 'pozo-cangrejo-loco' },
+    { email: 'admin2@pozocangrejoloco.pe', password: 'admin2026', rol: 'Administrador', nombre: 'Admin 2 (Pozo Cangrejo Loco)', empresaId: 'pozo-cangrejo-loco' },
+    { email: 'chofer1@pozocangrejoloco.pe', password: 'chofer2026', rol: 'Chofer', nombre: 'Chofer 1 (Pozo Cangrejo Loco)', empresaId: 'pozo-cangrejo-loco' },
+    { email: 'chofer2@pozocangrejoloco.pe', password: 'chofer2026', rol: 'Chofer', nombre: 'Chofer 2 (Pozo Cangrejo Loco)', empresaId: 'pozo-cangrejo-loco' },
+    { email: 'promotor1@pozocangrejoloco.pe', password: 'promotor2026', rol: 'Promotor', nombre: 'Promotor 1 (Pozo Cangrejo Loco)', empresaId: 'pozo-cangrejo-loco' }
   ];
   function buscarCredencial(email){
     var norm = String(email || '').trim().toLowerCase();
@@ -1482,13 +1480,7 @@
     { id: 'admin-gotadorada', nombre: 'Admin Gota Dorada', emails: ['admin@gotadorada.pe'] },
     { id: 'chofer-gotadorada-1', nombre: 'Chofer Gota Dorada 1', emails: ['chofer@gotadorada.pe'] },
     { id: 'admin-cisternaselvalle', nombre: 'Admin Cisternas El Valle', emails: ['admin@cisternaselvalle.pe'] },
-    { id: 'chofer-cisternaselvalle-1', nombre: 'Chofer Cisternas El Valle 1', emails: ['chofer@cisternaselvalle.pe'] },
-    { id: 'pcl-marcos', nombre: 'Marcos (Admin / Chofer)', emails: ['admin1@pozocangrejoloco.pe', 'chofer1@pozocangrejoloco.pe'] },
-    { id: 'pcl-luis', nombre: 'Luis (Admin / Chofer)', emails: ['admin2@pozocangrejoloco.pe', 'chofer2@pozocangrejoloco.pe'] },
-    { id: 'pcl-diego', nombre: 'Diego (Admin / Chofer)', emails: ['admin3@pozocangrejoloco.pe', 'chofer3@pozocangrejoloco.pe'] },
-    { id: 'pcl-carla', nombre: 'Carla (Promotora)', emails: ['promotor1@pozocangrejoloco.pe'] },
-    { id: 'pcl-nadia', nombre: 'Nadia (Promotora)', emails: ['promotor2@pozocangrejoloco.pe'] },
-    { id: 'pcl-promotor3', nombre: 'Promotor PCL 3', emails: ['promotor3@pozocangrejoloco.pe'] }
+    { id: 'chofer-cisternaselvalle-1', nombre: 'Chofer Cisternas El Valle 1', emails: ['chofer@cisternaselvalle.pe'] }
   ];
   function personaDeCredencial(cred){
     if(!cred) return null;
@@ -1660,6 +1652,121 @@
     return cuentas;
   }
   CREDENCIALES_PERSONAL = CREDENCIALES_PERSONAL.concat(generarDirectorioCentral());
+
+  /* ==========================================================================
+     Plantilla de personal por empresa (editable desde Ajustes → "Personal de la
+     empresa"). CREDENCIALES_PERSONAL es solo el POOL de correos que puede tener
+     una empresa (los fijos del código + las 150 del Directorio Central + los que
+     el Administrador escriba a mano). Una persona NO cuenta como personal activo
+     —no sale en el <select> de Chofer del Despacho, ni en "Conseguido por", ni en
+     las tablas de Contabilidad/billeteras— hasta que el Administrador de esa
+     empresa (o Piero) la confirma aquí, poniéndole nombre y uno o más roles.
+     Con dos o más roles, esa cuenta puede alternar entre ellos desde el selector
+     rápido de rol de la cabecera (cred.roles, ver rolesDeCredencial()).
+     Se guarda solo en este navegador (localStorage) — igual de "best-effort" que
+     el checklist del Ayudante; no hay tabla en Supabase para esto todavía.
+     Semilla: cada empresa asociada arranca con su personal fijo ya confirmado,
+     EXCEPTO Pozo Cangrejo Loco, que arranca vacía (su Administrador la arma).
+     ========================================================================== */
+  var PLANTILLA_EMPRESAS_KEY = 'kunturmasha_plantilla_empresas_v1';
+  var PLR_ROLES = ['admin', 'chofer', 'ayudante', 'promotor'];
+  var PLR_INT_A_DB = { admin: 'Administrador', chofer: 'Chofer', ayudante: 'Ayudante', promotor: 'Promotor' };
+  var PLR_DB_A_INT = { Administrador: 'admin', Chofer: 'chofer', Ayudante: 'ayudante', Promotor: 'promotor', Cliente: 'cliente' };
+  var PLR_ETIQUETA = { admin: 'Administrador', chofer: 'Chofer', ayudante: 'Ayudante', promotor: 'Promotor' };
+  function normalizarCorreo(x){ return String(x || '').trim().toLowerCase(); }
+  function cargarPlantillaEmpresas(){
+    try{ var o = JSON.parse(localStorage.getItem(PLANTILLA_EMPRESAS_KEY) || 'null'); if(o && typeof o === 'object') return o; }catch(e){}
+    return null;
+  }
+  function plantillaSemilla(){
+    var out = {};
+    EMPRESAS.forEach(function(e){ if(!e.esSedeCentral) out[e.id] = {}; });
+    CREDENCIALES_PERSONAL.forEach(function(c){
+      if(c.directorioCentral || c.accesoGlobal) return;   // pool generado / equipo sede: no se pre-confirman
+      if(!out[c.empresaId]) return;                        // solo empresas asociadas
+      if(c.empresaId === 'pozo-cangrejo-loco') return;     // arranca vacía
+      var entry = out[c.empresaId][c.email] || { nombre: c.nombre, roles: [] };
+      var lista = (Array.isArray(c.roles) && c.roles.length) ? c.roles.slice() : [PLR_DB_A_INT[c.rol] || 'admin'];
+      lista.forEach(function(r){ if(entry.roles.indexOf(r) === -1) entry.roles.push(r); });
+      entry.nombre = c.nombre;
+      out[c.empresaId][c.email] = entry;
+    });
+    return out;
+  }
+  var plantillaEmpresas = cargarPlantillaEmpresas() || plantillaSemilla();
+  function guardarPlantillaEmpresas(){
+    try{ localStorage.setItem(PLANTILLA_EMPRESAS_KEY, JSON.stringify(plantillaEmpresas)); }catch(e){}
+  }
+  guardarPlantillaEmpresas(); // persiste la semilla la primera vez
+
+  // Garantiza una PERSONA (ver PERSONAS) para un correo confirmado que no tuviera una —
+  // así su comisión de "Conseguido por / Promotor" se puede calcular igual que la del
+  // personal fijo. Las creadas aquí llevan dePlantilla:true y siguen el nombre asignado.
+  function asegurarPersonaPorCorreo(email, nombre){
+    email = normalizarCorreo(email);
+    var p = PERSONAS.find(function(pe){ return pe.emails.indexOf(email) !== -1; });
+    if(p) return p;
+    p = { id: 'plr-' + passwordOchoDigitos(email), nombre: nombre || email, emails: [email], dePlantilla: true };
+    PERSONAS.push(p);
+    return p;
+  }
+  // Vuelca la plantilla sobre el pool de credenciales: fija cred.roles / cred.nombre y
+  // marca cred.enPlantilla. Si un correo confirmado no existía en el pool (lo escribió el
+  // Administrador a mano), se sintetiza una credencial real para que pueda iniciar sesión
+  // (contraseña derivada del correo, como en el Directorio Central). Se llama al cargar y
+  // cada vez que el Administrador guarda un cambio en Ajustes.
+  function aplicarPlantillaACredenciales(){
+    Object.keys(plantillaEmpresas).forEach(function(empresaId){
+      var roster = plantillaEmpresas[empresaId] || {};
+      Object.keys(roster).forEach(function(emailRaw){
+        var email = normalizarCorreo(emailRaw);
+        var entry = roster[emailRaw];
+        var rolesArr = PLR_ROLES.filter(function(r){ return (entry.roles || []).indexOf(r) !== -1; });
+        if(!rolesArr.length) rolesArr = ['admin'];
+        var rolDb = PLR_INT_A_DB[rolesArr[0]] || 'Administrador';
+        var cred = buscarCredencial(email);
+        if(!cred){
+          cred = { email: email, password: passwordOchoDigitos(email), rol: rolDb, nombre: entry.nombre || email, empresaId: empresaId, personalPlantilla: true };
+          CREDENCIALES_PERSONAL.push(cred);
+        }
+        cred.rol = rolDb;
+        cred.roles = rolesArr;
+        cred.nombre = entry.nombre || cred.nombre;
+        cred.enPlantilla = true;
+        var persona = asegurarPersonaPorCorreo(email, cred.nombre);
+        if(!cred.personaId) cred.personaId = persona.id;
+        if(persona.dePlantilla) persona.nombre = cred.nombre;
+      });
+    });
+  }
+  aplicarPlantillaACredenciales();
+
+  function estaEnPlantilla(email, empresaId){
+    var r = plantillaEmpresas[empresaId];
+    return !!(r && r[normalizarCorreo(email)]);
+  }
+  // Personal confirmado de una empresa: [{ email, nombre, roles[], cred }], ordenado por nombre.
+  function rosterDeEmpresa(empresaId){
+    var r = plantillaEmpresas[empresaId] || {};
+    return Object.keys(r).map(function(email){
+      var cred = buscarCredencial(email);
+      return { email: email, nombre: r[email].nombre || (cred && cred.nombre) || email, roles: (r[email].roles || []).slice(), cred: cred };
+    }).sort(function(a, b){ return a.nombre.localeCompare(b.nombre); });
+  }
+  // Personas (para "Conseguido por / Promotor" y su comisión) con al menos un correo
+  // confirmado en la plantilla de esa empresa — nadie de otras empresas se cuela.
+  function personasDeEmpresa(empresaId){
+    var r = plantillaEmpresas[empresaId] || {};
+    var emails = Object.keys(r);
+    return PERSONAS.filter(function(pe){ return pe.emails.some(function(e){ return emails.indexOf(e) !== -1; }); });
+  }
+  // Pool de correos asignables de una empresa (fijos + Directorio Central), sin el equipo sede.
+  function poolCorreosDe(empresaId){
+    return CREDENCIALES_PERSONAL
+      .filter(function(c){ return c.empresaId === empresaId && !c.accesoGlobal; })
+      .map(function(c){ return { email: c.email, rol: c.rol, directorio: !!c.directorioCentral }; })
+      .sort(function(a, b){ return a.email.localeCompare(b.email); });
+  }
 
   function buscarEmpresa(id){
     return EMPRESAS.find(function(e){ return e.id === id; }) || EMPRESAS[0];
@@ -2053,18 +2160,26 @@
   // ver cambiarEmpresaActiva().
   function poblarSelectChofer(){
     var empresa = buscarEmpresa(empresaActivaId);
-    var reales = CREDENCIALES_PERSONAL.filter(function(c){ return c.rol === 'Chofer' && c.empresaId === empresa.id; }).map(function(c){ return c.nombre; });
+    // Solo choferes CONFIRMADOS en la plantilla de la empresa activa (ver plantillaEmpresas).
+    // Si aún no hay ninguno, cae al respaldo de ejemplo (choferesDemo, hoy vacío salvo las
+    // empresas mínimas) para no dejar el Despacho sin ninguna opción de arranque.
+    var reales = rosterDeEmpresa(empresa.id).filter(function(m){ return m.roles.indexOf('chofer') !== -1; }).map(function(m){ return m.nombre; });
     var nombres = reales.length ? reales : empresa.choferesDemo;
     els.chofer.innerHTML = '<option value="">— Sin asignar —</option>' +
       nombres.map(function(n){ return '<option value="' + escapeHtml(n) + '">' + escapeHtml(n) + '</option>'; }).join('');
   }
   poblarSelectChofer();
-  // "Conseguido por / Promotor" se llena desde PERSONAS (no texto libre) para que sus
-  // valores calcen siempre con lo que usa el cálculo de comisiones — todo el personal puede
-  // figurar ahí (Administradores y Choferes incluidos, no solo Promotores), sin importar
-  // qué empresa esté activa (es la red de promotores de toda la plataforma).
-  els.conseguidoPor.innerHTML = '<option value="">— Cliente directo (sin promotor) —</option>' +
-    PERSONAS.map(function(pe){ return '<option value="' + escapeHtml(pe.id) + '">' + escapeHtml(pe.nombre) + '</option>'; }).join('');
+  // "Conseguido por / Promotor" se llena desde las PERSONAS con personal confirmado en la
+  // empresa activa (no texto libre) para que sus valores calcen siempre con el cálculo de
+  // comisiones. Cualquier rol puede traer un cliente (Administradores y Choferes incluidos),
+  // pero solo si su empresa ya lo confirmó en la plantilla. Se repuebla al cambiar de empresa.
+  function poblarSelectPromotor(){
+    var previo = els.conseguidoPor.value;
+    els.conseguidoPor.innerHTML = '<option value="">— Cliente directo (sin promotor) —</option>' +
+      personasDeEmpresa(empresaActivaId).map(function(pe){ return '<option value="' + escapeHtml(pe.id) + '">' + escapeHtml(nombrePersonaMostrado(pe)) + '</option>'; }).join('');
+    els.conseguidoPor.value = previo;
+  }
+  poblarSelectPromotor();
 
   var empresaSelectorEl = document.getElementById('empresaSelector');
   // Cambiar de empresa activa reordena qué ve el Administrador: su propia Agenda,
@@ -2085,10 +2200,12 @@
       els.filterGroup.querySelectorAll('.filter-btn').forEach(function(b){ b.classList.toggle('active', b.dataset.estado === 'Todos'); });
     }
     poblarSelectChofer();
+    poblarSelectPromotor();
     actualizarUIPagosSegunEmpresa();
     renderTodo();
     if(vistaActual === 'contabilidad') renderContabilidad();
     if(vistaActual === 'ayudante') renderAyudante();
+    if(vistaActual === 'ajustes') renderAjustes();
   }
   // Aislamiento estricto entre empresas asociadas: una cuenta de Administrador cuya
   // credencial trae empresaId fijo solo puede ver/operar SU empresa — el <select> queda con
@@ -4780,50 +4897,198 @@
   function renderAjustes(){
     var wrap = document.getElementById('ajustesPersonalWrap');
     if(!wrap) return;
+    // El panel "Personal de la empresa" lo ve cualquier Administrador (para SU empresa);
+    // el Directorio Central de Accesos, solo la cuenta maestra. Otros roles no ven nada.
+    var esAdmin = rolDbActual === 'Administrador';
     var esPiero = !!(usuarioActual && usuarioActual.email === PIERO_SUPERADMIN_EMAIL);
-    if(!esPiero){
-      wrap.innerHTML = '';
-      wrap.dataset.montado = '';
-      return;
-    }
-    if(wrap.dataset.montado !== '1'){
-      var opcionesEmpresa = EMPRESAS.filter(function(e){ return !e.esSedeCentral; })
-        .map(function(e){ return '<option value="' + e.id + '">' + escapeHtml(e.nombre) + '</option>'; }).join('');
-      wrap.innerHTML =
-        '<div class="panel">' +
-          '<h2>🔐 Directorio Central de Accesos</h2>' +
-          '<p style="font-size:0.8rem; color:var(--muted); margin:0 0 12px;">150 cuentas de prueba (Administrador, Chofer y Ayudante — 10 de cada una) repartidas en las 5 empresas asociadas. Visible solo para esta cuenta maestra. Copia una fila para entregarle sus credenciales a esa empresa.</p>' +
-          '<div class="form-row">' +
-            '<div class="form-group"><label>Buscar (nombre o correo)</label><input type="search" id="dcBuscar" placeholder="Ej: garcia, ruta.norte, tanque..."></div>' +
-            '<div class="form-group"><label>Empresa</label><select id="dcEmpresa"><option value="">Todas las empresas</option>' + opcionesEmpresa + '</select></div>' +
-            '<div class="form-group"><label>Rol</label><select id="dcRol"><option value="">Todos los roles</option><option value="Administrador">Administrador</option><option value="Chofer">Chofer</option><option value="Ayudante">Ayudante</option></select></div>' +
-          '</div>' +
-          '<p class="campo-nota" id="dcContador"></p>' +
-          '<div class="tabla-wrap"><table class="tabla-registro"><thead><tr><th>Nombre</th><th>Empresa</th><th>Rol</th><th>Correo</th><th>Contraseña</th><th></th></tr></thead><tbody id="dcTbody"></tbody></table></div>' +
-        '</div>';
+    if(!esAdmin){ wrap.innerHTML = ''; wrap.dataset.montado = ''; return; }
+    // Reconstruye el cascarón si nunca se montó o si cambió quién lo mira (el Directorio
+    // Central solo debe existir en el DOM cuando lo ve la cuenta maestra).
+    var quierePiero = esPiero ? '1' : '0';
+    if(wrap.dataset.montado !== '1' || wrap.dataset.dc !== quierePiero){
+      wrap.innerHTML = '<div id="pePanelHost"></div>' + (esPiero ? '<div id="dcHost"></div>' : '');
       wrap.dataset.montado = '1';
-      document.getElementById('dcBuscar').addEventListener('input', debounce(renderDirectorioCentralFiltrado, 150));
-      document.getElementById('dcEmpresa').addEventListener('change', renderDirectorioCentralFiltrado);
-      document.getElementById('dcRol').addEventListener('change', renderDirectorioCentralFiltrado);
-      // Delegado en el tbody (se repinta con innerHTML en cada filtro) — copia "correo /
-      // contraseña" al portapapeles; si el navegador no soporta el Clipboard API (ej. sin
-      // HTTPS), cae a un alert con el texto para copiar a mano.
-      document.getElementById('dcTbody').addEventListener('click', function(e){
-        var btn = e.target.closest('.btn-copiar-credencial');
-        if(!btn) return;
-        var texto = btn.dataset.email + ' / ' + btn.dataset.password;
-        if(navigator.clipboard && navigator.clipboard.writeText){
-          navigator.clipboard.writeText(texto).then(function(){
-            var original = btn.textContent;
-            btn.textContent = '✅ Copiado';
-            setTimeout(function(){ btn.textContent = original; }, 1200);
-          }).catch(function(){ alert('No se pudo copiar automáticamente. Credenciales: ' + texto); });
-        } else {
-          alert('Credenciales: ' + texto);
-        }
-      });
+      wrap.dataset.dc = quierePiero;
+      if(esPiero) montarDirectorioCentral(document.getElementById('dcHost'));
     }
-    renderDirectorioCentralFiltrado();
+    // El panel de personal se reconstruye en cada entrada a Ajustes y en cada cambio de
+    // empresa (su tabla y su pool de correos son estado "vivo"). Sus inputs son efímeros y
+    // no hay repintados en segundo plano que puedan pisar lo que se esté tecleando.
+    var host = document.getElementById('pePanelHost');
+    if(host){ host.innerHTML = panelPersonalEmpresaHtml(); activarPanelPersonalEmpresa(); }
+    if(esPiero) renderDirectorioCentralFiltrado();
+  }
+
+  // ---- Directorio Central de Accesos — se construye una sola vez (así no se pierde el
+  // foco del buscador en cada tecla); renderDirectorioCentralFiltrado() repinta solo la tabla.
+  function montarDirectorioCentral(cont){
+    if(!cont) return;
+    var opcionesEmpresa = EMPRESAS.filter(function(e){ return !e.esSedeCentral; })
+      .map(function(e){ return '<option value="' + e.id + '">' + escapeHtml(e.nombre) + '</option>'; }).join('');
+    cont.innerHTML =
+      '<div class="panel" style="margin-top:16px;">' +
+        '<h2>🔐 Directorio Central de Accesos</h2>' +
+        '<p style="font-size:0.8rem; color:var(--muted); margin:0 0 12px;">150 cuentas de prueba (Administrador, Chofer y Ayudante — 10 de cada una) repartidas en las 5 empresas asociadas. Visible solo para esta cuenta maestra: son el pool de correos que cada empresa puede confirmar como personal.</p>' +
+        '<div class="form-row">' +
+          '<div class="form-group"><label>Buscar (nombre o correo)</label><input type="search" id="dcBuscar" placeholder="Ej: garcia, ruta.norte, tanque..."></div>' +
+          '<div class="form-group"><label>Empresa</label><select id="dcEmpresa"><option value="">Todas las empresas</option>' + opcionesEmpresa + '</select></div>' +
+          '<div class="form-group"><label>Rol</label><select id="dcRol"><option value="">Todos los roles</option><option value="Administrador">Administrador</option><option value="Chofer">Chofer</option><option value="Ayudante">Ayudante</option></select></div>' +
+        '</div>' +
+        '<p class="campo-nota" id="dcContador"></p>' +
+        '<div class="tabla-wrap"><table class="tabla-registro"><thead><tr><th>Nombre</th><th>Empresa</th><th>Rol</th><th>Correo</th><th>Contraseña</th><th></th></tr></thead><tbody id="dcTbody"></tbody></table></div>' +
+      '</div>';
+    document.getElementById('dcBuscar').addEventListener('input', debounce(renderDirectorioCentralFiltrado, 150));
+    document.getElementById('dcEmpresa').addEventListener('change', renderDirectorioCentralFiltrado);
+    document.getElementById('dcRol').addEventListener('change', renderDirectorioCentralFiltrado);
+    document.getElementById('dcTbody').addEventListener('click', function(e){
+      var btn = e.target.closest('.btn-copiar-credencial');
+      if(!btn) return;
+      var texto = btn.dataset.email + ' / ' + btn.dataset.password;
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(texto).then(function(){
+          var original = btn.textContent;
+          btn.textContent = '✅ Copiado';
+          setTimeout(function(){ btn.textContent = original; }, 1200);
+        }).catch(function(){ alert('No se pudo copiar automáticamente. Credenciales: ' + texto); });
+      } else {
+        alert('Credenciales: ' + texto);
+      }
+    });
+  }
+
+  // ---- Panel "Personal de la empresa" — el Administrador confirma quién trabaja en su
+  // empresa: elige un correo del pool (o escribe uno nuevo), le pone nombre y uno o más
+  // roles. Apunta SIEMPRE a la empresa activa (empresaActivaId): un Administrador normal
+  // está fijo en la suya; Piero elige cuál con el switch 🏢 de la cabecera. ----
+  function panelPersonalEmpresaHtml(){
+    var empresa = buscarEmpresa(empresaActivaId);
+    var roster = rosterDeEmpresa(empresa.id);
+    var filas = roster.map(function(m){
+      var chips = m.roles.map(function(r){
+        return '<span class="rol-pill ' + (ROL_PILL_CLASE[PLR_INT_A_DB[r]] || '') + '">' + escapeHtml(PLR_ETIQUETA[r] || r) + '</span>';
+      }).join(' ');
+      return '<tr>' +
+        '<td>' + escapeHtml(m.nombre) + '</td>' +
+        '<td class="mono">' + escapeHtml(m.email) + '</td>' +
+        '<td>' + (chips || '<span style="color:var(--muted);">—</span>') + '</td>' +
+        '<td style="white-space:nowrap;">' +
+          '<button type="button" class="btn-ghost btn-pe-editar" data-email="' + escapeHtml(m.email) + '" style="font-size:0.68rem; padding:4px 8px;">✏️ Editar</button> ' +
+          '<button type="button" class="btn-ghost btn-pe-quitar" data-email="' + escapeHtml(m.email) + '" style="font-size:0.68rem; padding:4px 8px;">🗑️ Quitar</button>' +
+        '</td></tr>';
+    }).join('') || '<tr><td colspan="4" style="text-align:center; color:var(--muted);">Sin personal confirmado todavía — agrega a alguien abajo para que aparezca en Despacho, Agenda, Contabilidad y billeteras.</td></tr>';
+    var enRoster = {};
+    roster.forEach(function(m){ enRoster[m.email] = true; });
+    var opcionesPool = poolCorreosDe(empresa.id).filter(function(o){ return !enRoster[o.email]; }).map(function(o){
+      return '<option value="' + escapeHtml(o.email) + '">' + escapeHtml(o.email) + ' — ' + escapeHtml(o.rol) + (o.directorio ? ' (directorio)' : '') + '</option>';
+    }).join('');
+    var dominio = (empresa.id + '.pe').replace(/-/g, '');
+    var checksRoles = PLR_ROLES.map(function(r){
+      return '<label style="display:inline-flex; align-items:center; gap:6px; margin:0 14px 6px 0; cursor:pointer;"><input type="checkbox" class="pe-rol" value="' + r + '"> ' + escapeHtml(PLR_ETIQUETA[r]) + '</label>';
+    }).join('');
+    return '<div class="panel" style="margin-bottom:16px;">' +
+      '<h2>👥 Personal de la empresa — ' + escapeHtml(empresa.nombre) + '</h2>' +
+      '<p class="campo-nota" style="margin:0 0 12px;">Solo el personal que confirmes aquí aparece en el selector de Chofer del Despacho, en "Conseguido por / Promotor", en las tablas de Contabilidad y en las billeteras. Los correos sin confirmar siguen en el pool para agregarlos cuando quieras.</p>' +
+      '<div class="tabla-wrap"><table class="tabla-registro"><thead><tr><th>Nombre</th><th>Correo</th><th>Roles</th><th></th></tr></thead><tbody id="peTbody">' + filas + '</tbody></table></div>' +
+      '<form id="formPersonalEmpresa" style="margin-top:16px; border-top:1px solid var(--border); padding-top:14px;">' +
+        '<h3 style="font-size:0.9rem; margin:0 0 10px;" id="peFormTitulo">Agregar personal</h3>' +
+        '<input type="hidden" id="peEditando" value="">' +
+        '<div class="form-row">' +
+          '<div class="form-group"><label>Correo</label><select id="peCorreoSelect"><option value="">— Elige un correo del pool —</option>' + opcionesPool + '<option value="__nuevo__">✍️ Escribir un correo nuevo…</option></select></div>' +
+          '<div class="form-group" id="peCorreoNuevoWrap" hidden><label>Correo nuevo</label><input type="email" id="peCorreoNuevo" placeholder="nombre@' + escapeHtml(dominio) + '"></div>' +
+          '<div class="form-group"><label>Nombre del trabajador</label><input type="text" id="peNombre" placeholder="Ej: Juan Pérez"></div>' +
+        '</div>' +
+        '<div class="form-group"><label>Roles autorizados</label><div style="margin-top:6px; display:flex; flex-wrap:wrap;">' + checksRoles + '</div>' +
+          '<p class="campo-nota" style="margin:4px 0 0;">Con dos o más roles, esta persona podrá alternar entre ellos desde el selector de rol de la cabecera, sin volver a iniciar sesión.</p>' +
+        '</div>' +
+        '<button type="submit" class="btn">Confirmar personal</button> ' +
+        '<button type="button" class="btn-ghost" id="peCancelar" hidden>Cancelar edición</button>' +
+        '<p class="modal-status" id="pePersonalStatus"></p>' +
+      '</form>' +
+    '</div>';
+  }
+  function activarPanelPersonalEmpresa(){
+    var form = document.getElementById('formPersonalEmpresa');
+    if(!form) return;
+    var sel = document.getElementById('peCorreoSelect');
+    var nuevoWrap = document.getElementById('peCorreoNuevoWrap');
+    sel.addEventListener('change', function(){ nuevoWrap.hidden = sel.value !== '__nuevo__'; });
+    document.getElementById('peTbody').addEventListener('click', function(e){
+      var bE = e.target.closest('.btn-pe-editar');
+      var bQ = e.target.closest('.btn-pe-quitar');
+      if(bE) cargarPersonalEnForm(bE.dataset.email);
+      else if(bQ) quitarPersonalEmpresa(bQ.dataset.email);
+    });
+    document.getElementById('peCancelar').addEventListener('click', resetFormPersonal);
+    form.addEventListener('submit', function(e){
+      e.preventDefault();
+      var status = document.getElementById('pePersonalStatus');
+      var editando = document.getElementById('peEditando').value;
+      var correo = editando
+        ? editando
+        : (sel.value === '__nuevo__' ? normalizarCorreo(document.getElementById('peCorreoNuevo').value) : sel.value);
+      var nombre = document.getElementById('peNombre').value.trim();
+      var roles = PLR_ROLES.filter(function(r){ return !!document.querySelector('.pe-rol[value="' + r + '"]:checked'); });
+      if(!correo || correo.indexOf('@') === -1){ status.textContent = 'Elige o escribe un correo válido.'; status.className = 'modal-status err'; return; }
+      if(!nombre){ status.textContent = 'Ponle el nombre del trabajador.'; status.className = 'modal-status err'; return; }
+      if(!roles.length){ status.textContent = 'Marca al menos un rol.'; status.className = 'modal-status err'; return; }
+      plantillaEmpresas[empresaActivaId] = plantillaEmpresas[empresaActivaId] || {};
+      plantillaEmpresas[empresaActivaId][correo] = { nombre: nombre, roles: roles };
+      guardarPlantillaEmpresas();
+      aplicarPlantillaACredenciales();
+      var msg = '✅ ' + nombre + ' ' + (editando ? 'actualizado' : 'confirmado') + ' en ' + buscarEmpresa(empresaActivaId).nombre + '.';
+      sincronizarPlantillaUI();
+      var s2 = document.getElementById('pePersonalStatus');
+      if(s2){ s2.textContent = msg; s2.className = 'modal-status ok'; }
+    });
+  }
+  function cargarPersonalEnForm(email){
+    var entry = (plantillaEmpresas[empresaActivaId] || {})[email];
+    if(!entry) return;
+    document.getElementById('peEditando').value = email;
+    document.getElementById('peCorreoSelect').disabled = true;
+    document.getElementById('peCorreoNuevoWrap').hidden = true;
+    document.getElementById('peNombre').value = entry.nombre || '';
+    document.querySelectorAll('.pe-rol').forEach(function(c){ c.checked = (entry.roles || []).indexOf(c.value) !== -1; });
+    document.getElementById('peFormTitulo').textContent = 'Editar: ' + email;
+    document.getElementById('peCancelar').hidden = false;
+    document.getElementById('peNombre').focus();
+  }
+  function resetFormPersonal(){
+    var f = document.getElementById('formPersonalEmpresa');
+    if(!f) return;
+    f.reset();
+    document.getElementById('peEditando').value = '';
+    document.getElementById('peCorreoSelect').disabled = false;
+    document.getElementById('peCorreoNuevoWrap').hidden = true;
+    document.getElementById('peFormTitulo').textContent = 'Agregar personal';
+    document.getElementById('peCancelar').hidden = true;
+  }
+  function quitarPersonalEmpresa(email){
+    var roster = plantillaEmpresas[empresaActivaId] || {};
+    if(!roster[email]) return;
+    if(!confirm('¿Quitar a ' + (roster[email].nombre || email) + ' del personal de ' + buscarEmpresa(empresaActivaId).nombre + '?\n\nEl correo seguirá disponible en el pool y sus registros pasados no se borran, pero dejará de aparecer en Despacho, Agenda y billeteras.')) return;
+    delete roster[email];
+    guardarPlantillaEmpresas();
+    var cred = buscarCredencial(email);
+    if(cred){
+      cred.enPlantilla = false;
+      if(cred.personalPlantilla){
+        var i = CREDENCIALES_PERSONAL.indexOf(cred);
+        if(i >= 0) CREDENCIALES_PERSONAL.splice(i, 1);
+      } else {
+        cred.roles = [PLR_DB_A_INT[cred.rol] || 'admin'];
+      }
+    }
+    sincronizarPlantillaUI();
+  }
+  // Refresca todo lo que depende de la plantilla tras un alta/edición/baja de personal.
+  function sincronizarPlantillaUI(){
+    poblarSelectChofer();
+    poblarSelectPromotor();
+    if(vistaActual === 'ajustes') renderAjustes();
+    if(vistaActual === 'perfil') renderPerfil();
+    if(vistaActual === 'contabilidad') renderContabilidad();
+    renderLista();
   }
   // Repinta solo la tabla de resultados del Directorio Central según los filtros activos —
   // separado de renderAjustes() para no reconstruir los controles (y perder el foco de
@@ -5088,15 +5353,15 @@
         '<div class="panel" style="margin-top:16px;"><h2>Historial de transacciones</h2>' + tablaMovimientos(a.movimientos) + '</div>';
       activarEditorNombre(credPropia);
     } else if(rolDbActual === 'Administrador'){
-      // Bug corregido: antes listaba TODOS los choferes de CREDENCIALES_PERSONAL sin
-      // importar la empresa (inofensivo con solo 3 choferes de Kunturmasha, pero con las
-      // 150 cuentas del Directorio Central mostraba choferes de las 5 empresas mezclados,
-      // sin importar cuál estuviera activa) — ahora se filtra por empresaActivaId, igual
-      // que el resto de la Agenda/Contabilidad de este Administrador.
-      var choferes = CREDENCIALES_PERSONAL.filter(function(c){ return c.rol === 'Chofer' && (c.empresaId || 'kunturmasha') === empresaActivaId; }).map(function(c){ return Object.assign({}, c, calcularComisionesChofer(c)); });
-      // Comisiones por viajes conseguidos: TODO el personal (Administradores y Choferes
-      // incluidos, no solo Promotores) — una fila por PERSONA, no por cuenta.
-      var promotores = PERSONAS.map(function(pe){ return Object.assign({}, pe, calcularComisionesPromotor(pe)); });
+      // Solo el personal CONFIRMADO en la plantilla de la empresa activa (ver
+      // plantillaEmpresas / Ajustes → "Personal de la empresa"). Una empresa recién creada,
+      // sin nadie confirmado, ve estas tablas vacías y sus totales en S/. 0.00.
+      var choferes = rosterDeEmpresa(empresaActivaId)
+        .filter(function(m){ return m.cred && m.roles.indexOf('chofer') !== -1; })
+        .map(function(m){ return Object.assign({}, m.cred, calcularComisionesChofer(m.cred)); });
+      // Comisiones por viajes conseguidos: cualquier rol puede traer un cliente, pero solo
+      // el personal confirmado de esta empresa — una fila por PERSONA, no por cuenta.
+      var promotores = personasDeEmpresa(empresaActivaId).map(function(pe){ return Object.assign({}, pe, calcularComisionesPromotor(pe)); });
       var totalChofer = choferes.reduce(function(s, c){ return s + c.saldo; }, 0);
       var totalPromotor = promotores.reduce(function(s, pe){ return s + pe.saldo; }, 0);
       var totalIngresos = pedidos.filter(function(p){ return p.estado === 'Completado'; }).reduce(function(s, p){ return s + (Number(p.precio) || 0); }, 0);
