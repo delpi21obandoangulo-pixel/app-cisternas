@@ -44,6 +44,32 @@
     });
   });
 
+  // "Instalar app": Chrome/Edge/Android disparan beforeinstallprompt cuando la PWA
+  // es instalable. Guardamos el evento y mostramos el botón de la cabecera; al
+  // pulsarlo, lanzamos el diálogo nativo. En iOS no existe este evento (se instala
+  // desde "Compartir → Añadir a pantalla de inicio"): ahí el botón no aparece.
+  var deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', function(e){
+    e.preventDefault();
+    deferredPrompt = e;
+    var btn = document.getElementById('btnInstalarApp');
+    if (btn) btn.hidden = false;
+  });
+  window.addEventListener('DOMContentLoaded', function(){
+    var btn = document.getElementById('btnInstalarApp');
+    if (!btn) return;
+    btn.addEventListener('click', function(){
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.finally(function(){ deferredPrompt = null; btn.hidden = true; });
+    });
+  });
+  window.addEventListener('appinstalled', function(){
+    var btn = document.getElementById('btnInstalarApp');
+    if (btn) btn.hidden = true;
+    if (window.fxToast) window.fxToast('App instalada ✓', 'ok', 2600);
+  });
+
   // Indicador online/offline discreto (usa el toast si está).
   function net(on){
     if (window.fxToast) window.fxToast(on ? 'Conexión restablecida' : 'Sin conexión — trabajando en local', on ? 'ok' : 'err', 2600);

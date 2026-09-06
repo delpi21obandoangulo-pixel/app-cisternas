@@ -297,6 +297,37 @@
   }
 
   /* ===================================================================
+     6b. ATAJOS DE TECLADO — Alt+1..9 cambia de pestaña; "?" muestra la ayuda
+     =================================================================== */
+  function initShortcuts(){
+    function enCampo(el){
+      if (!el) return false;
+      var t = (el.tagName || '').toLowerCase();
+      return t === 'input' || t === 'textarea' || t === 'select' || el.isContentEditable;
+    }
+    document.addEventListener('keydown', function(e){
+      if (e.ctrlKey || e.metaKey) return;
+      if (enCampo(e.target)) return;
+      // Alt + dígito -> N-ésima pestaña visible
+      if (e.altKey && /^[1-9]$/.test(e.key)){
+        var vis = $$('.view-tab').filter(function(b){ return !b.hidden && b.offsetParent !== null; });
+        var target = vis[parseInt(e.key, 10) - 1];
+        if (target){ e.preventDefault(); target.click(); }
+        return;
+      }
+      // "?" -> ayuda
+      if (e.key === '?' && !e.altKey){
+        e.preventDefault();
+        if (window.fxToast) window.fxToast('Atajos: Alt+1…9 cambia de pestaña · Esc cierra ventanas', '', 4200);
+      }
+      // Esc -> cierra modales abiertos
+      if (e.key === 'Escape'){
+        $$('.modal-backdrop').forEach(function(m){ if (!m.hidden) m.hidden = true; });
+      }
+    });
+  }
+
+  /* ===================================================================
      7. TOASTS — window.fxToast(mensaje, 'ok'|'err'|'')
      =================================================================== */
   function initToast(){
@@ -327,6 +358,7 @@
     try { initTilt(); }       catch(e){ console.warn('ui-fx tilt', e); }
     try { initScrollIn(); }   catch(e){ console.warn('ui-fx scrollIn', e); }
     try { initNumberRoll(); } catch(e){ console.warn('ui-fx numberRoll', e); }
+    try { initShortcuts(); }  catch(e){ console.warn('ui-fx shortcuts', e); }
     try { initToast(); }      catch(e){ console.warn('ui-fx toast', e); }
     document.documentElement.classList.add('ui-fx-on');
   });
