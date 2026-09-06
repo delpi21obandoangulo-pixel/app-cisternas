@@ -12,8 +12,13 @@
    ============================================================================ */
 'use strict';
 
-var CACHE_VERSION = 'wcs-v3';           // <-- súbelo en cada deploy
+var CACHE_VERSION = 'wcs-v4';
 var CACHE_NAME = 'watercore-' + CACHE_VERSION;
+
+// Código de la app: SIEMPRE red primero (así un deploy nuevo se ve al instante
+// estando online) y el caché solo es el respaldo sin conexión. No hace falta
+// subir CACHE_VERSION en cada deploy por estos.
+var NETWORK_FIRST = /\/(index\.html|app\.js|ui-fx\.js|ui-fx\.css|pwa\.js)$/;
 
 var PRECACHE = [
   '/',
@@ -84,7 +89,23 @@ self.addEventListener('fetch', function(e){
     return;
   }
 
-  // Estáticos mismo origen: cache-first + revalidación en segundo plano.
+  // Código de la app (index/app.js/ui-fx/pwa): RED PRIMERO. Fresco si hay internet;
+  // el caché solo entra si la red falla.
+  if (NETWORK_FIRST.test(url.pathname)) {
+    e.respondWith(
+      fetch(req).then(function(res){
+        if (res && res.status === 200 && res.type === 'basic') {
+          var copy = res.clone();
+          caches.open(CACHE_NAME).then(function(c){ c.put(req, copy); });
+        }
+        return res;
+      }).catch(function(){ return caches.match(req); })
+    );
+    return;
+  }
+
+  // Resto de estáticos mismo origen (vendor, iconos, imágenes, manifest):
+  // cache-first + revalidación en segundo plano.
   e.respondWith(
     caches.match(req).then(function(cached){
       var network = fetch(req).then(function(res){

@@ -2543,6 +2543,88 @@
       'Copiado — pega con Ctrl+V en Excel o Google Sheets.' : 'No se pudo copiar automáticamente; selecciona la tabla manualmente.';
   }
 
+  /* ---------- Descargar contabilidad como un único CSV ---------- */
+  // Escapa un campo para CSV (RFC 4180): entrecomilla si hay coma, comilla o salto,
+  // y duplica las comillas internas.
+  function csvCampo(v){
+    var s = (v == null) ? '' : String(v);
+    return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+  function filasACSV(filas){
+    return filas.map(function(f){ return f.map(csvCampo).join(','); }).join('\r\n');
+  }
+  function descargarArchivo(nombre, contenido, mime){
+    try{
+      var blob = new Blob(['﻿' + contenido], { type: (mime || 'text/csv') + ';charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = nombre;
+      document.body.appendChild(a); a.click();
+      setTimeout(function(){ a.remove(); URL.revokeObjectURL(url); }, 400);
+      return true;
+    }catch(e){ return false; }
+  }
+  function nombrePeriodoArchivo(){
+    var r = rangoDelPeriodo();
+    var d = (r.desde === '0000-01-01') ? 'inicio' : r.desde;
+    var h = (r.hasta === '9999-12-31') ? 'hoy' : r.hasta;
+    return d + '_a_' + h;
+  }
+  function exportarContabilidadCSV(){
+    var empresa = buscarEmpresa(empresaActivaId);
+    var bloques = [];
+    bloques.push([['WaterCore Space — Contabilidad (simulación)']]);
+    bloques.push([['Empresa', empresa.nombre], ['Periodo', nombrePeriodoArchivo()], ['Generado', new Date().toISOString()]]);
+
+    var fP = [['— PEDIDOS —'], ['Fecha','ID','Cliente','Código','Teléfono','Ubicación','Volumen m³','Método pago','Precio','Chofer','Ayudante','Estado','Motivo']];
+    pedidosDelPeriodo().forEach(function(p){
+      fP.push([p.fecha, p.id, p.cliente, p.codigoCliente||'', p.telefono||'', p.ubicacion||'',
+        (p.volumenM3||''), p.metodoPago||'', (isFinite(Number(p.precio))?Number(p.precio).toFixed(2):''),
+        p.chofer||'', p.ayudante||'', p.estado, p.motivoCancelacion||'']);
+    });
+    bloques.push(fP);
+
+    var fG = [['— GASTOS —'], ['Fecha','ID','Categoría','Descripción','Monto']];
+    gastosDelPeriodo().forEach(function(g){ fG.push([g.fecha, g.id, g.categoria, g.descripcion||'', (isFinite(Number(g.monto))?Number(g.monto).toFixed(2):'')]); });
+    bloques.push(fG);
+
+    var asientos = asientosDelPeriodo();
+    var fD = [['— LIBRO DIARIO —'], ['Fecha','Glosa','Cuenta','Debe','Haber']];
+    asientos.forEach(function(e){ fD.push([e.fecha, e.glosa, nombreCuenta(e.cuenta), e.debe?e.debe.toFixed(2):'', e.haber?e.haber.toFixed(2):'']); });
+    bloques.push(fD);
+
+    var fM = [['— LIBRO MAYOR —'], ['Cuenta','Fecha','Glosa','Debe','Haber','Saldo cuenta']];
+    Object.keys(CUENTAS).forEach(function(c){
+      var movs = asientos.filter(function(e){ return e.cuenta === c; });
+      if(!movs.length) return;
+      var saldo = movs.reduce(function(s,e){ return s + e.debe - e.haber; }, 0);
+      movs.forEach(function(e){ fM.push([nombreCuenta(c), e.fecha, e.glosa, e.debe?e.debe.toFixed(2):'', e.haber?e.haber.toFixed(2):'', '']); });
+      fM.push([nombreCuenta(c) + ' — SALDO', '', '', '', '', saldo.toFixed(2)]);
+    });
+    bloques.push(fM);
+
+    var ventas = sumaCuenta(asientos, '70', 'haber');
+    var gPersonal = sumaCuenta(asientos, '62', 'debe');
+    var gServicios = sumaCuenta(asientos, '63', 'debe');
+    var gOtros = sumaCuenta(asientos, '65', 'debe');
+    var utilidad = ventas - gPersonal - gServicios - gOtros;
+    bloques.push([
+      ['— ESTADO DE RESULTADOS —'],
+      ['Ventas de servicio', ventas.toFixed(2)],
+      ['(-) Gastos de personal', gPersonal.toFixed(2)],
+      ['(-) Gastos de servicios', gServicios.toFixed(2)],
+      ['(-) Otros gastos', gOtros.toFixed(2)],
+      ['Utilidad del periodo', utilidad.toFixed(2)]
+    ]);
+
+    var contenido = bloques.map(function(b){ return filasACSV(b); }).join('\r\n\r\n');
+    var nombre = 'contabilidad_' + empresa.id + '_' + nombrePeriodoArchivo() + '.csv';
+    var ok = descargarArchivo(nombre, contenido);
+    if(window.fxToast) window.fxToast(ok ? 'Descargando ' + nombre : 'No se pudo generar el archivo', ok ? 'ok' : 'err');
+  }
+  var btnDescContab = document.getElementById('btnDescargarContab');
+  if(btnDescContab) btnDescContab.addEventListener('click', exportarContabilidadCSV);
+
   document.getElementById('btnCopiarDiario').addEventListener('click', function(){
     var filas = [['Fecha','Glosa','Cuenta','Debe','Haber']];
     asientosDelPeriodo().forEach(function(e){
