@@ -2034,10 +2034,17 @@
   var VISTAS = ['home', 'agenda', 'cotizar', 'hub', 'agendar', 'ayudante', 'contabilidad', 'perfil', 'ajustes'];
   var ID_VISTA = { home: 'vistaHome', agenda: 'vistaAgenda', cotizar: 'vistaCotizar', hub: 'vistaHub', agendar: 'vistaAgendar', ayudante: 'vistaAyudante', contabilidad: 'vistaContabilidad', perfil: 'vistaPerfil', ajustes: 'vistaAjustes' };
 
-  function irAVista(nombre){
+  function irAVista(nombre, desdePop){
     if(VISTAS.indexOf(nombre) === -1) nombre = 'home';
+    var mismaVista = nombre === vistaActual;
     var vistaAnterior = vistaActual;
     vistaActual = nombre;
+    // Historial: cada cambio real de vista deja una entrada, para que el botón "atrás"
+    // de Android (y el swipe-back) vuelvan a la vista anterior en vez de cerrar la app.
+    // `desdePop` = true cuando el propio popstate nos trajo aquí (no re-empujar).
+    if(!desdePop && !mismaVista){
+      try{ history.pushState({ v: nombre }, '', location.pathname + '?vista=' + nombre); }catch(e){}
+    }
     document.querySelectorAll('.view-tab').forEach(function(b){ b.classList.toggle('active', b.dataset.view === nombre); });
     VISTAS.forEach(function(v){ document.getElementById(ID_VISTA[v]).hidden = v !== nombre; });
     // Rendimiento: el mapa de Leaflet (iniciarMapaHub()) solo tiene sentido vivo mientras se
@@ -2060,6 +2067,30 @@
     if(btn.dataset.view !== 'agendar') cancelarEdicion();
     irAVista(btn.dataset.view);
   });
+
+  // Botón "atrás" (Android / swipe-back / navegador): 1º cierra un modal abierto,
+  // si no, vuelve a la vista anterior del historial. Nunca cierra la app de golpe
+  // salvo que ya no haya a dónde volver (lo maneja el navegador / Capacitor.App).
+  function cerrarModalesAbiertos(){
+    var n = 0;
+    document.querySelectorAll('.modal-backdrop:not([hidden])').forEach(function(m){ m.hidden = true; n++; });
+    return n;
+  }
+  window.addEventListener('popstate', function(e){
+    if(cerrarModalesAbiertos() > 0){
+      // el "atrás" se usó para cerrar el modal: re-añade un estado para no gastar el back
+      try{ history.pushState({ v: vistaActual }, '', location.pathname + '?vista=' + vistaActual); }catch(_){}
+      return;
+    }
+    cancelarEdicion();
+    var v = (e.state && e.state.v);
+    var permitidas = (VISTAS_POR_ROL[rolActivo] || VISTAS_POR_ROL.cliente).tabs;
+    if(!v || VISTAS.indexOf(v) === -1 || permitidas.indexOf(v) === -1){
+      v = (VISTAS_POR_ROL[rolActivo] || VISTAS_POR_ROL.cliente).defaultView;
+    }
+    irAVista(v, true);
+  });
+  try{ history.replaceState({ v: vistaActual || 'home' }, ''); }catch(e){}
 
   document.getElementById('vistaHome').addEventListener('click', function(e){
     var card = e.target.closest('.home-card');
@@ -3326,10 +3357,10 @@
         '<h2>Publica tu solicitud de agua</h2>' +
         '<p class="campo-nota">Las empresas asociadas verán tu pedido y ofertarán precio y tiempo de entrega durante ' + VENTANA_SUBASTA_MIN + ' minutos — tu teléfono solo se comparte con la empresa que gane.</p>' +
         '<form id="hubClienteForm">' +
-          '<div class="form-group"><label>Cliente / contacto</label><input type="text" id="hubCliente" value="' + escapeHtml(contacto ? contacto.cliente : '') + '" required></div>' +
-          '<div class="form-group"><label>Teléfono / WhatsApp de contacto</label><input type="tel" id="hubTelefono" value="' + escapeHtml(contacto ? contacto.telefono : '') + '" required></div>' +
+          '<div class="form-group"><label>Cliente / contacto</label><input type="text" id="hubCliente" autocomplete="name" enterkeyhint="next" value="' + escapeHtml(contacto ? contacto.cliente : '') + '" required></div>' +
+          '<div class="form-group"><label>Teléfono / WhatsApp de contacto</label><input type="tel" id="hubTelefono" inputmode="tel" autocomplete="tel" enterkeyhint="next" value="' + escapeHtml(contacto ? contacto.telefono : '') + '" required></div>' +
           '<div class="form-row">' +
-            '<div class="form-group"><label>Volumen (m³)</label><input type="number" id="hubVolumen" min="1" step="0.5" value="7" required></div>' +
+            '<div class="form-group"><label>Volumen (m³)</label><input type="number" id="hubVolumen" min="1" step="0.5" value="7" required inputmode="decimal"></div>' +
             '<div class="form-group"><label>Tipo de descarga</label><select id="hubTipoDescarga"><option value="Tanque Elevado">Tanque Elevado</option><option value="Cisterna Subterránea / Pozo">Cisterna Subt. / Pozo</option><option value="Bidones / Cilindros">Bidones / Cilindros</option></select></div>' +
           '</div>' +
           '<div class="form-row">' +
@@ -3343,7 +3374,7 @@
             '<button type="button" class="btn-ghost" id="btnUbicacionActualHub" style="width:100%; margin-bottom:4px;">📍 Usar mi ubicación actual</button>' +
             '<input type="hidden" id="hubLat"><input type="hidden" id="hubLng">' +
           '</div>' +
-          '<div class="form-group"><label>Dirección exacta / Referencia escrita</label><input type="text" id="hubDireccion" placeholder="Se autocompleta al marcar el mapa, o escríbela tú" required></div>' +
+          '<div class="form-group"><label>Dirección exacta / Referencia escrita</label><input type="text" id="hubDireccion" autocomplete="street-address" enterkeyhint="send" placeholder="Se autocompleta al marcar el mapa, o escríbela tú" required></div>' +
           '<button type="submit" class="btn" style="width:100%;">Publicar solicitud</button>' +
           '<p class="modal-status" id="hubClienteStatus"></p>' +
         '</form>' +
