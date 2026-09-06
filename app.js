@@ -3182,27 +3182,39 @@
 
     document.getElementById('hubClienteForm').addEventListener('submit', async function(e){
       e.preventDefault();
-      if(!supa){ document.getElementById('hubClienteStatus').textContent = 'Sin conexión — intenta más tarde.'; return; }
-      var cliente = document.getElementById('hubCliente').value.trim();
-      var telefono = document.getElementById('hubTelefono').value.trim();
-      var distrito = document.getElementById('hubUbicacion').value;
-      var direccion = document.getElementById('hubDireccion').value.trim();
+      var status = document.getElementById('hubClienteStatus');
+      if(!supa){ status.textContent = 'Sin conexión — intenta más tarde.'; status.className = 'modal-status err'; return; }
+      // Validación en cliente (UX + primer filtro). El servidor NO debe confiar en esto:
+      // la anon key permite saltarse este formulario, así que las restricciones de verdad
+      // van como CHECK/longitud en supabase_schema.sql. sanText() quita < > " ' etc.
+      var cliente = sanText(document.getElementById('hubCliente').value, 80);
+      var telefono = sanText(document.getElementById('hubTelefono').value, 20);
+      var distrito = sanText(document.getElementById('hubUbicacion').value, 80);
+      var direccion = sanText(document.getElementById('hubDireccion').value, 200);
+      var volumen = parseFloat(document.getElementById('hubVolumen').value);
+      var tipoDescarga = sanText(document.getElementById('hubTipoDescarga').value, 40);
+      var mangueraMetros = sanText(document.getElementById('hubManguera').value, 20);
+      function fallar(msg){ status.textContent = msg; status.className = 'modal-status err'; }
+      if(cliente.length < 2) return fallar('Escribe un nombre de contacto (mínimo 2 caracteres).');
+      if(!/^[0-9+\-()\s]{6,20}$/.test(telefono)) return fallar('El teléfono debe tener entre 6 y 20 dígitos (solo números, espacios y + - ( )).');
+      if(!(volumen >= 0.5 && volumen <= 50)) return fallar('El volumen debe estar entre 0.5 y 50 m³.');
+      if(direccion.length < 4 && distrito.length < 2) return fallar('Indica una dirección o referencia (mínimo 4 caracteres).');
+      if(!distrito) return fallar('Elige un distrito.');
       var lat = document.getElementById('hubLat').value;
       var lng = document.getElementById('hubLng').value;
       var nueva = {
-        id: 'SOL-' + Date.now().toString(36).toUpperCase(),
+        id: 'SOL-' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2, 6).toUpperCase(),
         cliente: cliente, telefono: telefono,
-        volumenM3: parseFloat(document.getElementById('hubVolumen').value) || 0,
+        volumenM3: volumen,
         ubicacion: direccion ? (direccion + ' — ' + distrito) : distrito,
-        tipoDescarga: document.getElementById('hubTipoDescarga').value,
-        mangueraMetros: document.getElementById('hubManguera').value,
-        piso: document.getElementById('hubTipoDescarga').value === 'Tanque Elevado' ? document.getElementById('hubPiso').value : '',
+        tipoDescarga: tipoDescarga,
+        mangueraMetros: mangueraMetros,
+        piso: tipoDescarga === 'Tanque Elevado' ? sanText(document.getElementById('hubPiso').value, 20) : '',
         lat: lat ? parseFloat(lat) : null, lng: lng ? parseFloat(lng) : null,
         horaFin: new Date(Date.now() + VENTANA_SUBASTA_MIN * 60000).toISOString(),
         estado: 'Abierta'
       };
       var res = await supa.from('solicitudes_centrales').insert(solicitudARemoto(nueva));
-      var status = document.getElementById('hubClienteStatus');
       if(res.error){ status.textContent = 'No se pudo publicar: ' + res.error.message; status.className = 'modal-status err'; return; }
       misSolicitudesIds.push(nueva.id);
       guardarMisSolicitudes();
@@ -3352,7 +3364,10 @@
         var solicitudId = form.dataset.solicitud;
         var precio = parseFloat(form.querySelector('.oferta-precio').value);
         var tiempo = parseInt(form.querySelector('.oferta-tiempo').value, 10);
-        if(!precio || !tiempo) return;
+        // Rangos sanos — el servidor los repite como CHECK (ver supabase_schema.sql).
+        if(!(precio >= 1 && precio <= 100000)){ alert('El precio de la oferta debe estar entre S/. 1 y S/. 100 000.'); return; }
+        if(!(tiempo >= 1 && tiempo <= 1440)){ alert('El tiempo de entrega debe estar entre 1 y 1440 minutos.'); return; }
+        if(!solicitudesCentrales.some(function(x){ return x.id === solicitudId && x.estado === 'Abierta'; })){ alert('Esa solicitud ya no está abierta.'); return; }
         var existente = ofertasSubasta.find(function(o){ return o.solicitudId === solicitudId && o.empresaId === empresaActivaId; });
         var oferta = { id: existente ? existente.id : ('OFE-' + Date.now().toString(36).toUpperCase()), solicitudId: solicitudId, empresaId: empresaActivaId, precio: precio, tiempoEntregaMin: tiempo };
         await supa.from('ofertas_subasta').upsert(ofertaARemoto(oferta), { onConflict: 'solicitud_id,empresa_id' });
