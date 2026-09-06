@@ -84,6 +84,34 @@ proyecto (Aura, Safari, Kunturmasha-web, etc.).
 
 ## 7. Progreso de commits (esta sesión)
 
-- `18cb26a` security: harden XSS/CSP/headers, extract inline JS, pin CDN deps with SRI
-- (siguiente) hardening batch 2: validación de formularios + esquema SQL endurecido +
-  estado-proyecto.md
+- `18cb26a` security: XSS (saneo + escape + CSP), IIFE a app.js externo, SRI
+- `4fe81ce` security: esquema SQL endurecido (CHECK/no_html/throttle), validación de
+  formularios, `estado-proyecto.md`
+- `e094f22` security: auto-hospedar vendor (Leaflet/supabase-js), CSP a `script-src
+  'self'`, informe de auto-pentest, caducidad de sesión
+- `e06838f` feat(ui): capa de movimiento "menú esponja" (gel) + microinteracciones
+  (`ui-fx.css` / `ui-fx.js`)
+
+## 8. Archivos nuevos de esta sesión
+
+| Archivo | Qué es |
+|---|---|
+| `INFORME-AUDITORIA.md` | Auditoría inicial completa |
+| `INFORME-AUDITORIA-2.md` | Auto-pentest (3 métodos) + contramedidas |
+| `estado-proyecto.md` | Este documento (Sección 1.6) |
+| `app.js` | Toda la lógica (extraída de `index.html`) |
+| `ui-fx.css`, `ui-fx.js` | Capa de animación / menús esponja |
+| `vercel.json` | Cabeceras de seguridad |
+| `vendor/` | Leaflet 1.9.4 + supabase-js 2.115.0 auto-hospedados |
+| `LIMPIAR-filas-pentest.sql` | Borra 22 filas de prueba que el auto-sync subió al Supabase real |
+| `supabase_schema.sql` | Reescrito: endurecido (CHECK, `no_html()`, triggers, vista) |
+
+## 9. PENDIENTE — acción del dueño (bloqueado para Claude)
+
+1. Ejecutar `supabase_schema.sql` (nuevo) en el SQL Editor de `mwvyhjvafwimcdxfyutf`.
+2. Ejecutar `LIMPIAR-filas-pentest.sql` (deja `pedidos` en 19).
+3. Decidir: **Supabase Auth** (recomendado) o **Edge Function gateway**.
+4. Rotar la anon key y TODAS las contraseñas de `CREDENCIALES_PERSONAL` (publicadas).
+5. Confirmar rama de producción (`master` vs `demo`) y desplegar a Vercel
+   (`index.html` + `app.js` + `ui-fx.*` + `vendor/` + `vercel.json`).
+6. (Opcional) Borrar del repo `kunturmasha-web.zip` y `kunturmasha_app.html` (cruft).
