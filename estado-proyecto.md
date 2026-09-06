@@ -1,7 +1,7 @@
 # estado-proyecto.md — PROYECTO AGUA (WaterCore Space / Despacho Hídrico)
 
 > Documento de infraestructura exigido por la Sección 1.6 de las directrices globales.
-> Última actualización: 2026-09-06 (sesión autónoma de auditoría + endurecimiento).
+> Última actualización: 2026-09-06 (auditoría + endurecimiento + roadmap + inicio "web → app").
 
 ## 1. Identidad del proyecto
 
@@ -111,11 +111,36 @@ Desplegado a **producción** en Vercel — `https://kunturmasha.vercel.app`.
 Cabeceras de seguridad, PWA y las 3 funciones del roadmap verificadas en vivo.
 El esquema SQL endurecido y `LIMPIAR-filas-pentest.sql` los aplicó el dueño.
 
-### git — SIN REMOTO
-Este repo **no tiene ningún remoto configurado** (`git remote -v` vacío), así que
-`git push` no tiene destino. Para respaldar en GitHub/GitLab:
-`git remote add origin <url> && git push -u origin master`.
-(El deploy a Vercel es independiente de git: sube el working tree directamente.)
+### git
+Remoto: `origin` → `https://github.com/delpi21obandoangulo-pixel/app-cisternas` (rama
+`master`). El deploy a Vercel es independiente de git.
+
+### Fase "web → app de celular" (en curso)
+Informe: `INFORME-APP-MOVIL.md` / `.docx` (rutas comparadas, paso a paso, tiendas).
+Recomendación: PWA a producción → **Capacitor con assets empaquetados** para Google
+Play (registrar la cuenta como organización con D-U-N-S) → iOS diferido.
+**Bloqueante antes de publicar en tiendas:** migrar el login a Supabase Auth /
+gateway + rotar claves; política de privacidad + borrado de cuenta; resolver la
+sync *last-write-wins*.
+
+Fase 0 (endurecer la PWA) — hecho y desplegado:
+- 0.1 set de iconos PNG (192/512 + maskable + apple-touch 180 + 3 shortcuts) +
+  manifest completo (`id`, `screenshots`, `launch_handler`, …). Elimina el bug de
+  instalabilidad del SVG `sizes:"any"`.
+- 0.3 `sw.js` v5 (sin skipWaiting automático, navigationPreload, `offline.html`,
+  poda LRU) + `pwa.js` `storage.persist()`.
+- 0.4 CSS móvil: `env(safe-area-inset-*)`, inputs a 16px (mata el zoom de iOS),
+  `100svh`, objetivos táctiles a 48px, `overscroll-behavior`, `@media (hover:none)`,
+  `user-select:none` en controles.
+- 0.5 `inputmode`/`enterkeyhint`/`autocomplete` en los formularios.
+- 0.7 botón "atrás" de Android: `history.pushState` por vista + `popstate` (cierra
+  modal, si no vuelve de vista).
+- Fix: `Permissions-Policy` estaba en `geolocation=()` (bloqueaba "usar mi
+  ubicación") → `geolocation=(self)`.
+
+Fase 0 pendiente: 0.2 capturas reales (tras 0.4), 0.6 minificar + pausar animaciones
+en gama baja + `content-visibility`, 0.8 auto-hospedar fuentes, 0.9 Lighthouse móvil
+en dispositivo real, 0.10 `assetlinks.json` (solo si se hace TWA).
 
 ## 8. Archivos nuevos de esta sesión
 
@@ -128,8 +153,12 @@ Este repo **no tiene ningún remoto configurado** (`git remote -v` vacío), así
 | `ui-fx.css`, `ui-fx.js` | Capa de animación / menús esponja |
 | `vercel.json` | Cabeceras de seguridad |
 | `vendor/` | Leaflet 1.9.4 + supabase-js 2.115.0 auto-hospedados |
-| `LIMPIAR-filas-pentest.sql` | Borra 22 filas de prueba que el auto-sync subió al Supabase real |
+| `LIMPIAR-filas-pentest.sql` | Borra filas de prueba que el auto-sync subió al Supabase real |
 | `supabase_schema.sql` | Reescrito: endurecido (CHECK, `no_html()`, triggers, vista) |
+| `INFORME-APP-MOVIL.md` / `.docx` | Informe "web → app de celular" (rutas, paso a paso, tiendas) |
+| `icons/` | Set de iconos PNG de la PWA + fuentes SVG |
+| `screenshots/` | Placeholders para el `screenshots` del manifest (sustituir por reales) |
+| `offline.html` | Página de respaldo del service worker (devuelve 200) |
 
 ## 9. PENDIENTE — acción del dueño (bloqueado para Claude)
 
