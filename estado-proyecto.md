@@ -93,12 +93,29 @@ proyecto (Aura, Safari, Kunturmasha-web, etc.).
 - `d8ad24b` feat(pwa): instalable + offline (service worker, manifest, icono)
 - `1c04f69` feat(contab): descargar contabilidad completa en un CSV; SW network-first
   para el código de la app (deploy nuevo se ve al instante estando online)
-- `31…` feat: botón "Instalar app" + atajos de teclado (Alt+1..9, ?, Esc)
+- `08a55ab` feat: botón "Instalar app" + atajos de teclado (Alt+1..9, ?, Esc)
+- `5754ea0` feat: 3 funciones del roadmap:
+    1. **Caja Negra** — rotación automática de chofer (máx. 3 servicios seguidos por
+       cliente); veto + auto-asignación + aviso + "Forzar" + guardia en el submit.
+    2. **Calculadora de fletes por cuadrantes** en Cotizar (Víctor Larco / Luz del
+       Sol / El Milagro / Alto Trujillo / Otro): base + m³ + recargo de zona +
+       recargo tanque, redondeado a S/.5, con "Pedir por WhatsApp". Constantes
+       ajustables en `app.js` (`FLETE_BASE`, `FLETE_POR_M3`, `FLETE_CUADRANTES`, …).
+    3. **Bono de apertura de promotor** — bono único S/.10/20/30 (por tramo de
+       precio) por cliente nuevo cuyo primer pedido llega a Completado, aparte de
+       las regalías por viaje. `BONO_APERTURA_TRAMOS` ajustable en `app.js`.
 
 ### Estado de despliegue
-Desplegado a **producción** en Vercel — `https://kunturmasha.vercel.app`
-(rama `demo-sandbox`). Cabeceras de seguridad, PWA y todos los cambios verificados
-en vivo con `curl`. El esquema SQL endurecido ya lo aplicó el dueño (sin errores).
+`master` = todo el trabajo de la sesión (fast-forward de `demo-sandbox`).
+Desplegado a **producción** en Vercel — `https://kunturmasha.vercel.app`.
+Cabeceras de seguridad, PWA y las 3 funciones del roadmap verificadas en vivo.
+El esquema SQL endurecido y `LIMPIAR-filas-pentest.sql` los aplicó el dueño.
+
+### git — SIN REMOTO
+Este repo **no tiene ningún remoto configurado** (`git remote -v` vacío), así que
+`git push` no tiene destino. Para respaldar en GitHub/GitLab:
+`git remote add origin <url> && git push -u origin master`.
+(El deploy a Vercel es independiente de git: sube el working tree directamente.)
 
 ## 8. Archivos nuevos de esta sesión
 
