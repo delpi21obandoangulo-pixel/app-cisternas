@@ -8,7 +8,7 @@
      otro hosting, una vista previa): sigue bloqueando scripts inline y hosts no listados,
      que es la mitigación clave del XSS almacenado. script-src NO lleva 'unsafe-inline':
      toda la lógica vive en app.js (externo) y no hay ni un solo on*="" en el HTML. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; img-src 'self' data: https://unpkg.com https://*.tile.openstreetmap.org; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://mwvyhjvafwimcdxfyutf.supabase.co wss://mwvyhjvafwimcdxfyutf.supabase.co https://nominatim.openstreetmap.org; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https://*.tile.openstreetmap.org; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://mwvyhjvafwimcdxfyutf.supabase.co wss://mwvyhjvafwimcdxfyutf.supabase.co https://nominatim.openstreetmap.org; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>WaterCore Space</title>
@@ -17,12 +17,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
-<!-- Leaflet (mapa del Hub Central, ver iniciarMapaHub()) — si el CDN no carga, el campo de
-     dirección del formulario sigue funcionando a mano, no bloquea nada. -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous">
-<script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"></script>
+<!-- Leaflet (mapa del Hub Central, ver iniciarMapaHub()) — AUTO-HOSPEDADO en /vendor
+     (Leaflet 1.9.4). Ya no se carga de ningún CDN: así la CSP puede ser
+     script-src 'self' a secas. Si el archivo faltara, el campo de dirección del
+     formulario sigue funcionando a mano, no bloquea nada. -->
+<link rel="stylesheet" href="/vendor/leaflet/leaflet.css">
+<script defer src="/vendor/leaflet/leaflet.js"></script>
 <style>
   :root{
     color-scheme: light;
@@ -1439,18 +1439,16 @@
 </div>
 
 <!--
-  Cliente de Supabase (opcional). Ahora con `defer` + SRI (integrity) y versión
-  EXACTA fijada (ya no la etiqueta flotante @2): los scripts `defer` se ejecutan
-  en orden de documento tras el parseo, así que leaflet -> supabase -> app.js
-  corren en ese orden y app.js siempre encuentra `window.supabase` y `L` listos,
-  sin condiciones de carrera. Si no hay internet, el CDN está bloqueado, o el
-  hash de integridad no cuadra, la etiqueta no ejecuta nada — app.js lo detecta
-  (window.supabase queda undefined) y sigue en modo local sin mostrar error.
-  La CSP (vercel.json / <meta>) restringe script-src a 'self' + estos dos CDNs.
+  Cliente de Supabase (opcional). AUTO-HOSPEDADO en /vendor (supabase-js 2.115.0,
+  versión exacta). Los tres scripts van con `defer`, así que se ejecutan en orden
+  de documento tras el parseo: leaflet -> supabase-js -> app.js, y app.js siempre
+  encuentra `window.supabase` y `L` listos, sin condiciones de carrera. Si el
+  archivo faltara, app.js lo detecta (window.supabase queda undefined) y sigue en
+  modo local sin mostrar error. Nada se carga de un CDN de terceros -> la CSP es
+  script-src 'self' a secas (ver <meta> arriba y vercel.json).
 -->
-<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0"
-        integrity="sha256-DYUJ5aq5pNiwsFJcJwghSahJ9Q33673fzZwz0rpkWtc=" crossorigin="anonymous"></script>
-<script defer src="app.js"></script>
+<script defer src="/vendor/supabase-js.js"></script>
+<script defer src="/app.js"></script>
 
 </body>
 </html>

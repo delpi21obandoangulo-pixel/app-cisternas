@@ -3534,19 +3534,35 @@
     irAVista(VISTAS_POR_ROL[interno].defaultView);
   }
 
+  // Caducidad de la sesión de personal guardada. NO es una defensa contra forja
+  // deliberada (el login es 100% de cliente: quien edite localStorage a mano entra
+  // igual — eso solo se cierra migrando a Supabase Auth, ver INFORME-AUDITORIA-2.md).
+  // Sí acota la ventana de una sesión olvidada en un equipo compartido / robada de
+  // un backup viejo de localStorage.
+  var SESION_TTL_MS = 12 * 60 * 60 * 1000; // 12 h
   function cargarSesionPersonal(){
     try{
       var raw = localStorage.getItem(SESION_PERSONAL_KEY);
       if(!raw) return null;
       var s = JSON.parse(raw);
+      // Formato viejo (solo {email}, sin ts): se acepta una vez y se reescribe con ts.
+      if(s && s.email && typeof s.ts !== 'number'){
+        var credLegacy = buscarCredencial(s.email);
+        if(credLegacy){ guardarSesionPersonal(credLegacy); return credLegacy; }
+        return null;
+      }
+      if(!s || !s.email || (Date.now() - s.ts) > SESION_TTL_MS){
+        borrarSesionPersonalGuardada();
+        return null;
+      }
       // Revalida contra CREDENCIALES_PERSONAL (no confía ciegamente en lo guardado): si la
       // cuenta ya no existe o le cambiaron el rol en el código, no se restaura la sesión.
-      var cred = buscarCredencial(s && s.email);
+      var cred = buscarCredencial(s.email);
       return cred || null;
     }catch(e){ return null; }
   }
   function guardarSesionPersonal(cred){
-    try{ localStorage.setItem(SESION_PERSONAL_KEY, JSON.stringify({ email: cred.email })); }catch(e){}
+    try{ localStorage.setItem(SESION_PERSONAL_KEY, JSON.stringify({ email: cred.email, ts: Date.now() })); }catch(e){}
   }
   function borrarSesionPersonalGuardada(){
     try{ localStorage.removeItem(SESION_PERSONAL_KEY); }catch(e){}
