@@ -90,7 +90,15 @@ proyecto (Aura, Safari, Kunturmasha-web, etc.).
 - `e094f22` security: auto-hospedar vendor (Leaflet/supabase-js), CSP a `script-src
   'self'`, informe de auto-pentest, caducidad de sesión
 - `e06838f` feat(ui): capa de movimiento "menú esponja" (gel) + microinteracciones
-  (`ui-fx.css` / `ui-fx.js`)
+- `d8ad24b` feat(pwa): instalable + offline (service worker, manifest, icono)
+- `1c04f69` feat(contab): descargar contabilidad completa en un CSV; SW network-first
+  para el código de la app (deploy nuevo se ve al instante estando online)
+- `31…` feat: botón "Instalar app" + atajos de teclado (Alt+1..9, ?, Esc)
+
+### Estado de despliegue
+Desplegado a **producción** en Vercel — `https://kunturmasha.vercel.app`
+(rama `demo-sandbox`). Cabeceras de seguridad, PWA y todos los cambios verificados
+en vivo con `curl`. El esquema SQL endurecido ya lo aplicó el dueño (sin errores).
 
 ## 8. Archivos nuevos de esta sesión
 
