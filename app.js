@@ -4381,6 +4381,15 @@
       aplicarRol('cliente');
       aplicarTinteSegunContexto(false);
     }
+    // Atajos de la PWA / enlaces directos: /?vista=agenda|hub|agendar|... — solo si
+    // esa vista está permitida para el rol actual (ver VISTAS_POR_ROL).
+    try{
+      var pedida = new URLSearchParams(location.search).get('vista');
+      if(pedida){
+        var permitidas = (VISTAS_POR_ROL[rolActivo] || {}).tabs || [];
+        if(permitidas.indexOf(pedida) !== -1) irAVista(pedida);
+      }
+    }catch(e){}
     if(supa) iniciarSupabase();
   }
 

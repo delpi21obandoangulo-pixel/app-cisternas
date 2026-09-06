@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="WaterCore Space">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7cc4ec"/>
+      <stop offset="1" stop-color="#2f7fb0"/>
+    </linearGradient>
+    <linearGradient id="drop" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#d6ecfa"/>
+    </linearGradient>
+    <radialGradient id="sheen" cx="0.35" cy="0.3" r="0.7">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <!-- fondo maskable: cubre todo el lienzo -->
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <!-- meridianos suaves tipo globo -->
+  <g stroke="#ffffff" stroke-opacity="0.14" stroke-width="6" fill="none">
+    <circle cx="256" cy="256" r="150"/>
+    <ellipse cx="256" cy="256" rx="60" ry="150"/>
+    <ellipse cx="256" cy="256" rx="150" ry="60"/>
+  </g>
+  <!-- gota de agua centrada en la zona segura (80%) -->
+  <path fill="url(#drop)" d="M256 108c-58 78-96 128-96 178a96 96 0 0 0 192 0c0-50-38-100-96-178z"/>
+  <path fill="url(#sheen)" d="M256 108c-58 78-96 128-96 178a96 96 0 0 0 192 0c0-50-38-100-96-178z"/>
+  <ellipse cx="222" cy="300" rx="20" ry="30" fill="#ffffff" fill-opacity="0.5"/>
+</svg>

@@ -113,7 +113,7 @@
       if (!el || el.disabled) return;
       el.classList.remove('fx-release');
       el.classList.add('fx-squish');
-      if (!reduce) spawnRipple(el, e);
+      // (el ripple ya lo hace app.js -> initRipples; aquí solo el squish/gel)
     }, true);
 
     function release(e){
@@ -128,23 +128,6 @@
     document.addEventListener('pointerup', release, true);
     document.addEventListener('pointercancel', release, true);
     document.addEventListener('pointerleave', release, true);
-  }
-
-  function spawnRipple(el, e){
-    try{
-      var cs = getComputedStyle(el);
-      if (cs.position === 'static') el.style.position = 'relative';
-      if (cs.overflow === 'visible') el.style.overflow = 'hidden';
-      var box = el.getBoundingClientRect();
-      var size = Math.max(box.width, box.height);
-      var r = document.createElement('span');
-      r.className = 'fx-ripple';
-      r.style.width = r.style.height = size + 'px';
-      r.style.left = (e.clientX - box.left - size/2) + 'px';
-      r.style.top  = (e.clientY - box.top  - size/2) + 'px';
-      el.appendChild(r);
-      setTimeout(function(){ r.remove(); }, 640);
-    }catch(_){}
   }
 
   /* ===================================================================

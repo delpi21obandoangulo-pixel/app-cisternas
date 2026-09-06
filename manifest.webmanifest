@@ -1,0 +1,23 @@
+{
+  "name": "WaterCore Space — Despacho Hídrico",
+  "short_name": "WaterCore",
+  "description": "Hub Central de gestión hídrica y red de empresas asociadas — agenda, despacho, subasta y contabilidad.",
+  "lang": "es-PE",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#dceffb",
+  "theme_color": "#dceffb",
+  "categories": ["business", "productivity", "utilities"],
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Ver agenda del día", "short_name": "Agenda", "url": "/?vista=agenda" },
+    { "name": "Hub Central", "short_name": "Hub", "url": "/?vista=hub" },
+    { "name": "Registrar despacho", "short_name": "Despacho", "url": "/?vista=agendar" }
+  ]
+}
