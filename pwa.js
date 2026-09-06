@@ -7,8 +7,16 @@
   'use strict';
   if (!('serviceWorker' in navigator)) return;
 
+  // Almacenamiento persistente: pide al navegador que NO expulse localStorage /
+  // IndexedDB / Cache cuando escasee el espacio o pase tiempo sin usar la app.
+  // Chrome lo concede casi siempre si la PWA está instalada. Crítico para la cola
+  // offline en un teléfono de campo. (En iOS el soporte es parcial; no molesta.)
+  if (navigator.storage && navigator.storage.persist) {
+    navigator.storage.persisted().then(function(ya){ if (!ya) navigator.storage.persist(); }).catch(function(){});
+  }
+
   window.addEventListener('load', function(){
-    navigator.serviceWorker.register('/sw.js').then(function(reg){
+    navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then(function(reg){
       // Detecta una versión nueva esperando para activarse.
       function notifyUpdate(){
         var w = reg.waiting;

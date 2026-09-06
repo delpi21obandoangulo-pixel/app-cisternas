@@ -1,23 +1,48 @@
 {
+  "id": "/?app=watercore",
   "name": "WaterCore Space — Despacho Hídrico",
   "short_name": "WaterCore",
-  "description": "Hub Central de gestión hídrica y red de empresas asociadas — agenda, despacho, subasta y contabilidad.",
+  "description": "Agenda, despacho, subasta y contabilidad de agua para empresas cisterna de Trujillo.",
   "lang": "es-PE",
   "dir": "ltr",
-  "start_url": "/",
+  "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait-primary",
   "background_color": "#dceffb",
   "theme_color": "#dceffb",
   "categories": ["business", "productivity", "utilities"],
+  "launch_handler": { "client_mode": "navigate-existing" },
+  "handle_links": "preferred",
+  "prefer_related_applications": false,
   "icons": [
-    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
-    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icon.svg", "sizes": "512x512", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "screenshots": [
+    { "src": "/screenshots/movil-agenda.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow", "label": "Agenda del día del chofer" },
+    { "src": "/screenshots/movil-despacho.png", "sizes": "1080x1920", "type": "image/png", "form_factor": "narrow", "label": "Registrar un despacho" },
+    { "src": "/screenshots/escritorio-hub.png", "sizes": "1920x1080", "type": "image/png", "form_factor": "wide", "label": "Hub Central de administración" }
   ],
   "shortcuts": [
-    { "name": "Ver agenda del día", "short_name": "Agenda", "url": "/?vista=agenda" },
-    { "name": "Hub Central", "short_name": "Hub", "url": "/?vista=hub" },
-    { "name": "Registrar despacho", "short_name": "Despacho", "url": "/?vista=agendar" }
+    {
+      "name": "Ver agenda del día", "short_name": "Agenda",
+      "url": "/?vista=agenda&source=pwa-shortcut",
+      "icons": [{ "src": "/icons/shortcut-agenda.png", "sizes": "96x96", "type": "image/png" }]
+    },
+    {
+      "name": "Hub Central", "short_name": "Hub",
+      "url": "/?vista=hub&source=pwa-shortcut",
+      "icons": [{ "src": "/icons/shortcut-hub.png", "sizes": "96x96", "type": "image/png" }]
+    },
+    {
+      "name": "Registrar despacho", "short_name": "Despacho",
+      "url": "/?vista=agendar&source=pwa-shortcut",
+      "icons": [{ "src": "/icons/shortcut-despacho.png", "sizes": "96x96", "type": "image/png" }]
+    }
   ]
 }
