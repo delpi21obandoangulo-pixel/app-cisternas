@@ -922,17 +922,102 @@
   // que calce con el cálculo de comisiones; si todavía no tiene ninguno, cae al roster de
   // ejemplo (EMPRESAS[].choferesDemo) — se repuebla cada vez que cambia la empresa activa,
   // ver cambiarEmpresaActiva().
-  function poblarSelectChofer(){
+  function choferesDeEmpresaActiva(){
     var empresa = buscarEmpresa(empresaActivaId);
+    var reales = rosterDeEmpresa(empresa.id).filter(function(m){ return m.roles.indexOf('chofer') !== -1; }).map(function(m){ return m.nombre; });
+    return reales.length ? reales : empresa.choferesDemo;
+  }
+  function poblarSelectChofer(){
     // Solo choferes CONFIRMADOS en la plantilla de la empresa activa (ver plantillaEmpresas).
     // Si aún no hay ninguno, cae al respaldo de ejemplo (choferesDemo, hoy vacío salvo las
     // empresas mínimas) para no dejar el Despacho sin ninguna opción de arranque.
-    var reales = rosterDeEmpresa(empresa.id).filter(function(m){ return m.roles.indexOf('chofer') !== -1; }).map(function(m){ return m.nombre; });
-    var nombres = reales.length ? reales : empresa.choferesDemo;
+    var nombres = choferesDeEmpresaActiva();
     els.chofer.innerHTML = '<option value="">— Sin asignar —</option>' +
       nombres.map(function(n){ return '<option value="' + escapeHtml(n) + '">' + escapeHtml(n) + '</option>'; }).join('');
   }
   poblarSelectChofer();
+
+  /* ==========================================================================
+     Algoritmo de despacho "CAJA NEGRA" (roadmap). Regla: ningún chofer atiende al
+     MISMO cliente más de 3 veces SEGUIDAS. Al elegir cliente en el Despacho:
+       - se mira su historial de choferes (pedidos no cancelados, del más viejo al
+         más nuevo);
+       - si los últimos 3 son el mismo chofer, ese chofer queda VETADO para el
+         siguiente servicio de ese cliente;
+       - se sugiere automáticamente otro chofer de la flota — el que hace más
+         tiempo que no atiende a ese cliente (o uno que nunca lo hizo).
+     Es una regla asistida: el Administrador puede marcar "Forzar" para saltársela
+     en un caso puntual (queda como decisión consciente, no accidental).
+     ========================================================================== */
+  var CAJA_NEGRA_MAX_SEGUIDAS = 3;
+  function historialChoferDeCliente(codigoCliente){
+    if(!codigoCliente) return [];
+    return pedidos
+      .filter(function(p){
+        return p.codigoCliente === codigoCliente && p.chofer &&
+               p.estado !== 'Cancelado' && p.estado !== 'Retiro Voluntario';
+      })
+      .sort(function(a, b){
+        return (a.fecha + String(a.orden || 0).padStart(6, '0'))
+             .localeCompare(b.fecha + String(b.orden || 0).padStart(6, '0'));
+      })
+      .map(function(p){ return p.chofer; });
+  }
+  function choferVetadoCajaNegra(codigoCliente){
+    var h = historialChoferDeCliente(codigoCliente);
+    if(h.length < CAJA_NEGRA_MAX_SEGUIDAS) return null;
+    var ultimos = h.slice(-CAJA_NEGRA_MAX_SEGUIDAS);
+    return ultimos.every(function(n){ return n === ultimos[0]; }) ? ultimos[0] : null;
+  }
+  // Sugiere un chofer válido: de la flota de la empresa activa, distinto del vetado,
+  // priorizando al que hace más tiempo (o nunca) atendió a ese cliente.
+  function sugerirChoferCajaNegra(codigoCliente, vetado){
+    var flota = choferesDeEmpresaActiva().filter(function(n){ return n && n !== vetado; });
+    if(!flota.length) return '';
+    var h = historialChoferDeCliente(codigoCliente);
+    function ultimaPosicion(nombre){
+      var idx = h.lastIndexOf(nombre);
+      return idx === -1 ? -1 : idx; // -1 = nunca -> máxima prioridad
+    }
+    return flota.slice().sort(function(a, b){ return ultimaPosicion(a) - ultimaPosicion(b); })[0];
+  }
+  // Evalúa el chofer actualmente elegido contra la regla y actualiza el aviso / el
+  // checkbox de forzar. Si `autoAsignar` y el elegido está vetado, cambia el <select>
+  // al sugerido. Devuelve true si hay un veto activo sin resolver.
+  function evaluarCajaNegra(autoAsignar){
+    var aviso = document.getElementById('cajaNegraAviso');
+    var forzarWrap = document.getElementById('cajaNegraForzarWrap');
+    var forzar = document.getElementById('cajaNegraForzar');
+    if(!aviso) return false;
+    var codigo = obtenerCodigoParaCliente(document.getElementById('cliente').value);
+    var vetado = codigo ? choferVetadoCajaNegra(codigo) : null;
+    if(!vetado){
+      aviso.hidden = true; forzarWrap.style.display = 'none'; forzar.checked = false;
+      return false;
+    }
+    var sugerido = sugerirChoferCajaNegra(codigo, vetado);
+    if(autoAsignar && els.chofer.value === vetado && sugerido){
+      els.chofer.value = sugerido;
+      if(window.fxToast) window.fxToast('Caja Negra: ' + vetado + ' ya atendió a este cliente 3 veces seguidas — se asignó a ' + sugerido, 'ok', 4200);
+    }
+    var choqueAhora = els.chofer.value === vetado;
+    aviso.hidden = false;
+    forzarWrap.style.display = choqueAhora ? 'flex' : 'none';
+    aviso.textContent = choqueAhora
+      ? '⚠️ Caja Negra: ' + vetado + ' ya atendió a este cliente ' + CAJA_NEGRA_MAX_SEGUIDAS + ' veces seguidas. Rotación sugerida: ' + (sugerido || 'sin más choferes disponibles') + '.'
+      : '🔄 Caja Negra: rotación aplicada (antes le tocaba a ' + vetado + ').';
+    return choqueAhora && !forzar.checked;
+  }
+  (function initCajaNegra(){
+    var elCliente = document.getElementById('cliente');
+    if(!elCliente || !els.chofer) return;
+    var reeval = debounce(function(){ evaluarCajaNegra(true); }, 250);
+    elCliente.addEventListener('input', reeval);
+    elCliente.addEventListener('change', reeval);
+    els.chofer.addEventListener('change', function(){ evaluarCajaNegra(false); });
+    var forzar = document.getElementById('cajaNegraForzar');
+    if(forzar) forzar.addEventListener('change', function(){ evaluarCajaNegra(false); });
+  })();
   // "Conseguido por / Promotor" se llena desde las PERSONAS con personal confirmado en la
   // empresa activa (no texto libre) para que sus valores calcen siempre con el cálculo de
   // comisiones. Cualquier rol puede traer un cliente (Administradores y Choferes incluidos),
@@ -1672,6 +1757,12 @@
     els.btnSubmit.textContent = '+ Programar en agenda';
     els.btnCancelEdit.hidden = true;
     els.horarioError.hidden = true;
+    var avisoCN = document.getElementById('cajaNegraAviso');
+    if(avisoCN){
+      avisoCN.hidden = true;
+      document.getElementById('cajaNegraForzarWrap').style.display = 'none';
+      document.getElementById('cajaNegraForzar').checked = false;
+    }
     actualizarPreviewHora('horaInicio');
     actualizarPreviewHora('horaFin');
     renderLista();
@@ -1733,6 +1824,24 @@
         '). Elige un horario a partir de las ' + formatearHora12(sumarMinutosHora(conflictoForm.horaFin, 1)) + '.';
       els.horarioError.hidden = false;
       return;
+    }
+
+    // Regla "Caja Negra": no repetir el mismo chofer 4+ veces seguidas con un cliente.
+    // Bloquea salvo que el Administrador marque "Forzar". No aplica al EDITAR (el pedido
+    // ya existe) ni si el chofer va "Sin asignar".
+    if(!editandoId && datos.chofer){
+      var vetadoCN = choferVetadoCajaNegra(datos.codigoCliente);
+      var forzarCN = document.getElementById('cajaNegraForzar');
+      if(vetadoCN === datos.chofer && !(forzarCN && forzarCN.checked)){
+        evaluarCajaNegra(false);
+        var sug = sugerirChoferCajaNegra(datos.codigoCliente, vetadoCN);
+        els.horarioError.textContent = '⚠️ Caja Negra: ' + datos.chofer + ' ya atendió a este cliente ' +
+          CAJA_NEGRA_MAX_SEGUIDAS + ' veces seguidas. Cambia a ' + (sug || 'otro chofer') +
+          ', o marca "Forzar esta asignación".';
+        els.horarioError.hidden = false;
+        document.getElementById('cajaNegraAviso').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
     }
 
     if(editandoId){
@@ -4169,9 +4278,60 @@
   }
 
   /* ---------- Cotizar (público, sin sesión) ----------
-     Ya no calcula nada: es una tarjeta de contacto directo (WhatsApp / llamada) resuelta
-     enteramente con enlaces <a href="wa.me/..."> y <a href="tel:..."> en el HTML — no
-     necesita JavaScript. */
+     Además de la tarjeta de contacto (WhatsApp / llamada), lleva una CALCULADORA DE
+     FLETES POR CUADRANTES: estima el flete según la zona de Trujillo, el volumen y el
+     tipo de descarga. Es orientativa — no crea ningún pedido, solo arma un mensaje de
+     WhatsApp con el detalle. Todos los precios son constantes ajustables aquí. */
+  var FLETE_BASE = 90;                    // salida de cisterna (S/.)
+  var FLETE_POR_M3 = 12;                  // S/. por m³
+  var FLETE_RECARGO_TANQUE_ELEVADO = 25;  // descarga a tanque elevado
+  var FLETE_CUADRANTES = {
+    'Víctor Larco':  { recargo: 0,  etiqueta: 'Víctor Larco (cercano)' },
+    'Luz del Sol':   { recargo: 45, etiqueta: 'Luz del Sol' },
+    'El Milagro':    { recargo: 35, etiqueta: 'El Milagro / Huanchaco' },
+    'Alto Trujillo': { recargo: 55, etiqueta: 'Alto Trujillo (El Porvenir alto)' },
+    'Otro':          { recargo: 20, etiqueta: 'Trujillo Cercado y alrededores' }
+  };
+  function redondearA5(n){ return Math.round(n / 5) * 5; }
+  function calcularFlete(cuadrante, volumenM3, descarga){
+    var q = FLETE_CUADRANTES[cuadrante] || FLETE_CUADRANTES['Otro'];
+    var vol = Math.max(1, Math.min(30, Number(volumenM3) || 0));
+    var subM3 = vol * FLETE_POR_M3;
+    var recTanque = descarga === 'tanque' ? FLETE_RECARGO_TANQUE_ELEVADO : 0;
+    var total = redondearA5(FLETE_BASE + subM3 + q.recargo + recTanque);
+    return {
+      cuadrante: q.etiqueta, volumen: vol, base: FLETE_BASE, subM3: subM3,
+      recargoZona: q.recargo, recargoTanque: recTanque, total: total
+    };
+  }
+  (function initCalculadoraFlete(){
+    var form = document.getElementById('fleteForm');
+    if(!form) return;
+    var elQ = document.getElementById('fleteCuadrante');
+    var elV = document.getElementById('fleteVolumen');
+    var elD = document.getElementById('fleteDescarga');
+    var elOut = document.getElementById('fleteResultado');
+    var elWa = document.getElementById('fleteWhatsApp');
+    function refrescar(){
+      var f = calcularFlete(elQ.value, elV.value, elD.value);
+      elOut.innerHTML =
+        '<div style="display:flex; justify-content:space-between; font-size:0.82rem; color:var(--muted);"><span>Salida de cisterna</span><span>' + formatMoneda(f.base) + '</span></div>' +
+        '<div style="display:flex; justify-content:space-between; font-size:0.82rem; color:var(--muted);"><span>' + f.volumen + ' m³ × ' + formatMoneda(FLETE_POR_M3) + '</span><span>' + formatMoneda(f.subM3) + '</span></div>' +
+        '<div style="display:flex; justify-content:space-between; font-size:0.82rem; color:var(--muted);"><span>Zona: ' + escapeHtml(f.cuadrante) + '</span><span>' + formatMoneda(f.recargoZona) + '</span></div>' +
+        (f.recargoTanque ? '<div style="display:flex; justify-content:space-between; font-size:0.82rem; color:var(--muted);"><span>Tanque elevado</span><span>' + formatMoneda(f.recargoTanque) + '</span></div>' : '') +
+        '<div style="display:flex; justify-content:space-between; font-weight:800; font-size:1.15rem; margin-top:8px; padding-top:8px; border-top:1px solid var(--border);"><span>Estimado</span><span class="mono">' + formatMoneda(f.total) + '</span></div>';
+      var msg = 'Hola WaterCore Space, cotización desde la web:\n' +
+        '• Zona: ' + f.cuadrante + '\n' +
+        '• Volumen: ' + f.volumen + ' m³\n' +
+        '• Descarga: ' + (elD.value === 'tanque' ? 'tanque elevado' : 'a nivel') + '\n' +
+        '• Flete estimado: ' + formatMoneda(f.total) + '\n' +
+        '¿Me confirman disponibilidad y precio final?';
+      elWa.href = 'https://wa.me/51958132361?text=' + encodeURIComponent(msg);
+    }
+    form.addEventListener('input', refrescar);
+    form.addEventListener('change', refrescar);
+    refrescar();
+  })();
 
   /* ---------- Mi Perfil / Billetera — comisión del 5% por viaje completado ---------- */
   function formatMoneda(n){ return 'S/. ' + (Number(n) || 0).toFixed(2); }
@@ -4236,6 +4396,55 @@
     if(cfg.promotorModalidad === 'fijo_dia') return 0;
     return precio * ((Number(cfg.promotorMonto) || 0) / 100); // 'porcentaje_viaje' (y default)
   }
+
+  /* ==========================================================================
+     Bono ÚNICO de apertura del promotor (roadmap). Se paga UNA sola vez por cada
+     CLIENTE NUEVO que un promotor abre — su primer pedido registrado en el
+     sistema — cuando ese primer pedido llega a "Completado". Es aparte de las
+     regalías por viaje (comisionPromotorDePedido). El monto va por tramos según
+     el precio de ese primer servicio (S/. 10 – S/. 30). Ajustable aquí.
+     ========================================================================== */
+  var BONO_APERTURA_TRAMOS = [
+    { max: 100,      monto: 10 },   // primer servicio de S/. 100 o menos
+    { max: 200,      monto: 20 },   // hasta S/. 200
+    { max: Infinity, monto: 30 }    // más de S/. 200
+  ];
+  function bonoAperturaDe(precioPrimerPedido){
+    var precio = Number(precioPrimerPedido) || 0;
+    for(var i = 0; i < BONO_APERTURA_TRAMOS.length; i++){
+      if(precio <= BONO_APERTURA_TRAMOS[i].max) return BONO_APERTURA_TRAMOS[i].monto;
+    }
+    return 0;
+  }
+  // Primer pedido (el más antiguo por fecha, luego por orden) de cada codigoCliente.
+  // Memoizado por longitud de `pedidos` para no recalcularlo en cada fila de la
+  // tabla de Admin (renderPerfil llama a calcularComisionesPromotor una vez por persona).
+  var _primerPedidoCache = { firma: null, mapa: null };
+  function primerPedidoPorCliente(){
+    if(_primerPedidoCache.firma === pedidos.length && _primerPedidoCache.mapa) return _primerPedidoCache.mapa;
+    var mapa = {};
+    pedidos.forEach(function(p){
+      var cod = p.codigoCliente;
+      if(!cod) return;
+      var actual = mapa[cod];
+      var clave = (p.fecha || '') + '#' + String(p.orden || 0).padStart(6, '0');
+      if(!actual || clave < actual.__clave){ p.__clave = clave; mapa[cod] = p; }
+    });
+    _primerPedidoCache = { firma: pedidos.length, mapa: mapa };
+    return mapa;
+  }
+  // Clientes que ESTA persona abrió y cuyo primer pedido ya está Completado.
+  function aperturasDePersona(persona){
+    var mapa = primerPedidoPorCliente();
+    var out = [];
+    Object.keys(mapa).forEach(function(cod){
+      var primero = mapa[cod];
+      if(primero.estado !== 'Completado') return;
+      if(!perteneceAPersona(primero.promotorEmail, persona)) return;
+      out.push({ codigo: cod, pedido: primero, bono: bonoAperturaDe(primero.precio) });
+    });
+    return out;
+  }
   function calcularComisionesPromotor(persona){
     var completados = pedidos.filter(function(p){ return p.estado === 'Completado' && perteneceAPersona(p.promotorEmail, persona); });
     var movsViajes = completados.map(function(p){ return { fecha: p.fecha, concepto: 'Pedido — ' + (p.cliente || p.id), monto: comisionPromotorDePedido(p) }; }).filter(function(m){ return m.monto > 0; });
@@ -4251,12 +4460,24 @@
       diasFijoVistos[clave] = true;
       movsViajes.push({ fecha: p.fecha, concepto: 'Sueldo fijo diario de promotor — ' + p.fecha, monto: Number(cfg.promotorMonto) || 0 });
     });
+    // Bono ÚNICO de apertura por cada cliente nuevo que esta persona abrió (ver
+    // aperturasDePersona()) — se suma a la billetera igual que las regalías por viaje.
+    var aperturas = aperturasDePersona(persona);
+    var movsBono = aperturas.map(function(ap){
+      return { fecha: ap.pedido.fecha, concepto: 'Bono de apertura — ' + (ap.pedido.cliente || ap.codigo), monto: ap.bono };
+    }).filter(function(m){ return m.monto > 0; });
+    var totalBono = movsBono.reduce(function(s, m){ return s + m.monto; }, 0);
+
     var ajustes = AJUSTES_HISTORICOS.filter(function(a){ return persona.emails.indexOf(a.email) !== -1 && a.tipo === 'promotor'; });
     var movsAjustes = ajustes.map(function(a){ return { fecha: a.fecha, concepto: a.concepto || 'Ajuste manual', monto: a.monto }; });
-    var movimientos = movsViajes.concat(movsAjustes).sort(function(x, y){ return y.fecha.localeCompare(x.fecha); });
+    var movimientos = movsViajes.concat(movsBono, movsAjustes).sort(function(x, y){ return y.fecha.localeCompare(x.fecha); });
     var saldo = movimientos.reduce(function(s, m){ return s + m.monto; }, 0);
     var dias = Array.from(new Set(completados.map(function(p){ return p.fecha; }).concat(ajustes.map(function(a){ return a.fecha; })))).length;
-    return { saldo: saldo, dias: dias, viajes: completados.length, movimientos: movimientos };
+    var regalias = movsViajes.reduce(function(s, m){ return s + m.monto; }, 0);
+    return {
+      saldo: saldo, dias: dias, viajes: completados.length, movimientos: movimientos,
+      bonoApertura: totalBono, clientesNuevos: aperturas.length, regalias: regalias
+    };
   }
 
   function tablaMovimientos(movimientos){
@@ -4386,8 +4607,10 @@
         // y se liquida igual a tu billetera.
         '<div class="panel" style="margin-top:16px;"><h2>Comisión como Promotor comisionista</h2>' +
           '<div class="stats-strip">' +
-            tileHtml({ label: 'Saldo por comisión (5%)', value: formatMoneda(pc.saldo), cls: 'good' }) +
-            tileHtml({ label: 'Pedidos conseguidos', value: pc.viajes }) +
+            tileHtml({ label: 'Saldo total', value: formatMoneda(pc.saldo), cls: 'good' }) +
+            tileHtml({ label: 'Regalías por viaje', value: formatMoneda(pc.regalias) }) +
+            tileHtml({ label: 'Bono de apertura', value: formatMoneda(pc.bonoApertura), cls: 'accent' }) +
+            tileHtml({ label: 'Clientes nuevos', value: pc.clientesNuevos }) +
           '</div>' + tablaMovimientos(pc.movimientos) +
         '</div>';
       activarEditorNombre(credPropia);
@@ -4395,11 +4618,17 @@
       var a = calcularComisionesPromotor(personaPropia);
       cont.innerHTML = editorNombreHtml(credPropia) +
         '<div class="stats-strip">' +
-          tileHtml({ label: 'Saldo por comisión (5%)', value: formatMoneda(a.saldo), cls: 'good' }) +
-          tileHtml({ label: 'Días trabajados', value: a.dias }) +
+          tileHtml({ label: 'Saldo total', value: formatMoneda(a.saldo), cls: 'good' }) +
+          tileHtml({ label: 'Regalías por viaje', value: formatMoneda(a.regalias) }) +
+          tileHtml({ label: 'Bono de apertura', value: formatMoneda(a.bonoApertura), cls: 'accent' }) +
+          tileHtml({ label: 'Clientes nuevos abiertos', value: a.clientesNuevos }) +
           tileHtml({ label: 'Pedidos completados', value: a.viajes }) +
         '</div>' +
-        '<div class="panel" style="margin-top:16px;"><h2>Historial de transacciones</h2>' + tablaMovimientos(a.movimientos) + '</div>';
+        '<div class="panel" style="margin-top:16px;">' +
+          '<h2>Módulo de comisiones</h2>' +
+          '<p class="campo-nota" style="margin:0 0 10px;">Tu billetera tiene dos partes: <strong>bono único de apertura</strong> (S/. 10–30 la primera vez que un cliente nuevo que tú trajiste completa su primer servicio, según el precio de ese servicio) y <strong>regalías por viaje</strong> (por cada viaje entregado de un cliente que conseguiste).</p>' +
+          tablaMovimientos(a.movimientos) +
+        '</div>';
       activarEditorNombre(credPropia);
     } else if(rolDbActual === 'Administrador'){
       // Solo el personal CONFIRMADO en la plantilla de la empresa activa (ver
@@ -4413,25 +4642,28 @@
       var promotores = personasDeEmpresa(empresaActivaId).map(function(pe){ return Object.assign({}, pe, calcularComisionesPromotor(pe)); });
       var totalChofer = choferes.reduce(function(s, c){ return s + c.saldo; }, 0);
       var totalPromotor = promotores.reduce(function(s, pe){ return s + pe.saldo; }, 0);
+      var totalBonoApertura = promotores.reduce(function(s, pe){ return s + (pe.bonoApertura || 0); }, 0);
+      var totalRegalias = promotores.reduce(function(s, pe){ return s + (pe.regalias || 0); }, 0);
       var totalIngresos = pedidos.filter(function(p){ return p.estado === 'Completado'; }).reduce(function(s, p){ return s + (Number(p.precio) || 0); }, 0);
       var filasChofer = choferes.map(function(c){
         return '<tr><td>' + escapeHtml(nombreMostrado(c)) + '</td><td class="num">' + c.dias + '</td><td class="num">' + c.viajes + '</td><td class="num">' + formatMoneda(c.saldo) + '</td></tr>';
       }).join('');
       var filasPromotor = promotores.map(function(pe){
-        return '<tr><td>' + escapeHtml(nombrePersonaMostrado(pe)) + '</td><td class="num">' + pe.dias + '</td><td class="num">' + pe.viajes + '</td><td class="num">' + formatMoneda(pe.saldo) + '</td></tr>';
+        return '<tr><td>' + escapeHtml(nombrePersonaMostrado(pe)) + '</td><td class="num">' + (pe.clientesNuevos || 0) + '</td><td class="num">' + formatMoneda(pe.bonoApertura || 0) + '</td><td class="num">' + pe.viajes + '</td><td class="num">' + formatMoneda(pe.regalias || 0) + '</td><td class="num">' + formatMoneda(pe.saldo) + '</td></tr>';
       }).join('');
       cont.innerHTML = editorNombreHtml(credPropia) +
         '<div class="stats-strip">' +
           tileHtml({ label: 'Ingresos (completados)', value: formatMoneda(totalIngresos), cls: 'accent' }) +
           tileHtml({ label: 'Comisiones a choferes', value: formatMoneda(totalChofer), cls: 'good' }) +
-          tileHtml({ label: 'Comisiones por viajes conseguidos', value: formatMoneda(totalPromotor), cls: 'good' }) +
+          tileHtml({ label: 'Bono de apertura (promotores)', value: formatMoneda(totalBonoApertura), cls: 'accent' }) +
+          tileHtml({ label: 'Regalías por viaje (promotores)', value: formatMoneda(totalRegalias), cls: 'good' }) +
         '</div>' +
         '<div class="panel" style="margin-top:16px;"><h2>Choferes — días trabajados y comisión</h2>' +
           '<div class="tabla-wrap"><table class="tabla-registro"><thead><tr><th>Chofer</th><th class="num">Días trabajados</th><th class="num">Viajes</th><th class="num">Saldo / Remuneración</th></tr></thead><tbody>' + filasChofer + '</tbody></table></div>' +
         '</div>' +
-        '<div class="panel" style="margin-top:16px;"><h2>Promotores de campo — comisiones por viajes conseguidos (todo el personal)</h2>' +
-          '<p class="campo-nota" style="margin:0 0 12px;">Cualquiera puede traer un cliente — Administradores y Choferes incluidos, no solo Promotores.</p>' +
-          '<div class="tabla-wrap"><table class="tabla-registro"><thead><tr><th>Persona</th><th class="num">Días trabajados</th><th class="num">Pedidos</th><th class="num">Saldo / Remuneración</th></tr></thead><tbody>' + filasPromotor + '</tbody></table></div>' +
+        '<div class="panel" style="margin-top:16px;"><h2>Promotores de campo — bono de apertura + regalías por viaje</h2>' +
+          '<p class="campo-nota" style="margin:0 0 12px;">Bono único de apertura (S/. 10–30) por cada cliente nuevo que completa su primer servicio · regalías por cada viaje entregado. Cualquiera puede traer un cliente — Administradores y Choferes incluidos.</p>' +
+          '<div class="tabla-wrap"><table class="tabla-registro"><thead><tr><th>Persona</th><th class="num">Clientes nuevos</th><th class="num">Bono apertura</th><th class="num">Viajes</th><th class="num">Regalías</th><th class="num">Saldo total</th></tr></thead><tbody>' + filasPromotor + '</tbody></table></div>' +
         '</div>' +
         panelConfigPagosHtml(empresaActivaId);
       activarEditorNombre(credPropia);

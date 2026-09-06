@@ -984,9 +984,41 @@
 
   <section id="vistaCotizar" hidden>
     <main class="layout-solo">
-      <div class="panel form-panel" style="text-align:center;">
-        <h2>Cotiza tu despacho de agua</h2>
-        <p class="campo-nota" style="font-size:0.9rem;">🕐 Atención rápida las 24 horas para despachos de cisterna en Trujillo y distritos. Escríbenos o llámanos y te confirmamos tu cotización al toque.</p>
+
+      <div class="panel form-panel">
+        <h2>🧮 Calculadora de fletes por cuadrantes</h2>
+        <p class="campo-nota" style="font-size:0.9rem;">Estimación rápida del flete según la zona de Trujillo, el volumen y el tipo de descarga. Es un <strong>estimado orientativo</strong> — el precio final se confirma por WhatsApp.</p>
+        <form id="fleteForm" style="max-width:420px; margin:16px auto 0;">
+          <div class="form-group">
+            <label for="fleteCuadrante">Cuadrante / zona</label>
+            <select id="fleteCuadrante">
+              <option value="Víctor Larco">Víctor Larco (cercano)</option>
+              <option value="Luz del Sol">Luz del Sol</option>
+              <option value="El Milagro">El Milagro / Huanchaco</option>
+              <option value="Alto Trujillo">Alto Trujillo (El Porvenir alto)</option>
+              <option value="Otro">Trujillo Cercado y alrededores</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="fleteVolumen">Volumen (m³)</label>
+            <input type="number" id="fleteVolumen" min="1" max="30" step="0.5" value="10">
+          </div>
+          <div class="form-group">
+            <label for="fleteDescarga">Tipo de descarga</label>
+            <select id="fleteDescarga">
+              <option value="nivel">A nivel de piso</option>
+              <option value="tanque">Tanque elevado (recargo)</option>
+            </select>
+          </div>
+          <div id="fleteResultado" class="panel" style="margin:6px 0 0; background:var(--surface-2);"></div>
+          <a id="fleteWhatsApp" class="btn" style="width:100%; margin-top:12px; font-size:0.92rem;"
+             href="#" target="_blank" rel="noopener">💬 Pedir por WhatsApp con esta cotización</a>
+        </form>
+      </div>
+
+      <div class="panel form-panel" style="text-align:center; margin-top:16px;">
+        <h2>Cotiza directo con un asesor</h2>
+        <p class="campo-nota" style="font-size:0.9rem;">🕐 Atención rápida las 24 horas para despachos de cisterna en Trujillo y distritos.</p>
         <div style="display:flex; flex-direction:column; gap:12px; align-items:stretch; max-width:360px; margin:20px auto 0;">
           <a class="btn" style="font-size:0.95rem; padding:14px 20px;"
              href="https://wa.me/51958132361?text=Hola%20WaterCore%20Space,%20deseo%20cotizar%20un%20servicio%20de%20agua."
@@ -995,6 +1027,7 @@
         </div>
         <p class="mono" style="font-size:1.15rem; font-weight:700; margin:18px 0 0;">+51 958 132 361</p>
       </div>
+
     </main>
   </section>
 
@@ -1088,6 +1121,10 @@
             <label>Chofer</label>
             <select id="chofer"></select>
             <p class="campo-nota" style="margin:6px 0 0;">La comisión del 5% de "Mi Perfil / Billetera" se calcula sobre este campo — por eso es una lista fija con los choferes registrados, no texto libre.</p>
+            <p class="campo-nota" id="cajaNegraAviso" style="margin:6px 0 0; color:var(--bad); font-weight:600;" hidden></p>
+            <label id="cajaNegraForzarWrap" style="display:none; align-items:center; gap:8px; margin-top:6px; cursor:pointer; font-size:0.8rem;">
+              <input type="checkbox" id="cajaNegraForzar"> Forzar esta asignación (ignorar la regla de rotación)
+            </label>
           </div>
           <div class="form-group">
             <label>Ayudante</label>
