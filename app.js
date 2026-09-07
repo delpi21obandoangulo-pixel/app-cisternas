@@ -3944,7 +3944,38 @@
   // de las demás. Únicamente piero@watercorespace.pe (cuenta maestra) ve aquí el "Directorio
   // Central de Accesos" con las 150 cuentas generadas (ver generarDirectorioCentral()).
   var PIERO_SUPERADMIN_EMAIL = 'piero@watercorespace.pe';
+  // "Eliminar mi cuenta" (Ajustes) — visible para cualquier personal con sesión.
+  // Hoy no hay cuenta en el servidor (el login es de cliente, ver INFORME-AUDITORIA);
+  // lo que se puede hacer es limpiar ESTE dispositivo y cerrar sesión. El borrado
+  // formal se pide por la web (eliminar-cuenta.html) hasta que exista Supabase Auth
+  // + la Edge Function eliminar-cuenta (ver supabase/functions/eliminar-cuenta/).
+  function renderEliminarCuenta(){
+    var box = document.getElementById('ajustesEliminarWrap');
+    if(!box) return;
+    box.hidden = !usuarioActual;
+    if(!usuarioActual || box.dataset.montado === '1') return;
+    box.dataset.montado = '1';
+    var chk = document.getElementById('ajustesEliminarConfirmar');
+    var btn = document.getElementById('btnEliminarCuenta');
+    var st = document.getElementById('ajustesEliminarStatus');
+    chk.addEventListener('change', function(){ btn.disabled = !chk.checked; });
+    btn.addEventListener('click', function(){
+      if(!chk.checked) return;
+      if(!confirm('¿Borrar de este dispositivo tus datos de acceso y preferencias, y cerrar sesión?')) return;
+      var conservar = { 'sedeCentral_pedidos_v1':1, 'sedeCentral_gastos_v1':1 }; // datos de negocio: no se tocan
+      try{
+        Object.keys(localStorage).forEach(function(k){
+          if(!conservar[k] && (k.indexOf('kunturmasha') === 0 || k.indexOf('sedeCentral_') === 0)) localStorage.removeItem(k);
+        });
+      }catch(e){}
+      st.textContent = 'Datos de este dispositivo borrados. Cerrando sesión…';
+      st.className = 'modal-status ok';
+      setTimeout(function(){ try{ cerrarSesionPersonal(); }catch(e){} location.replace('/'); }, 900);
+    });
+  }
+
   function renderAjustes(){
+    renderEliminarCuenta();
     var wrap = document.getElementById('ajustesPersonalWrap');
     if(!wrap) return;
     // El panel "Personal de la empresa" lo ve cualquier Administrador (para SU empresa);

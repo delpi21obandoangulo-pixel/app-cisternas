@@ -945,6 +945,7 @@
       </button>
     </div>
     <p class="home-footnote">💾 Todo se guarda en este navegador. La sección de Contabilidad es una simulación pensada para reemplazarse por el sistema contable real más adelante.</p>
+    <p class="home-footnote"><a href="/privacidad.html">Política de privacidad</a> · <a href="/eliminar-cuenta.html">Eliminar cuenta</a></p>
   </section>
 
   <section id="vistaAgenda" hidden>
@@ -1479,7 +1480,28 @@
       <div class="panel" style="margin-bottom:16px;">
         <h2>Tu cuenta</h2>
         <p style="font-size:0.86rem; color:var(--muted); margin:0 0 8px;">Correo: <strong style="color:var(--ink);" id="ajustesCuentaEmail">—</strong></p>
-        <p style="font-size:0.86rem; color:var(--muted); margin:0;">Rol: <span class="rol-pill" id="ajustesCuentaRol"></span></p>
+        <p style="font-size:0.86rem; color:var(--muted); margin:0 0 4px;">Rol: <span class="rol-pill" id="ajustesCuentaRol"></span></p>
+        <p style="font-size:0.78rem; color:var(--muted); margin:10px 0 0;">
+          <a href="/privacidad.html" target="_blank" rel="noopener">Política de privacidad</a> ·
+          <a href="/eliminar-cuenta.html" target="_blank" rel="noopener">Eliminar cuenta (web)</a>
+        </p>
+      </div>
+
+      <div class="panel" id="ajustesEliminarWrap" style="margin-bottom:16px;" hidden>
+        <h2>Eliminar mi cuenta</h2>
+        <p style="font-size:0.84rem; color:var(--muted); margin:0 0 10px;">
+          Cierra tu sesión y borra de <strong>este dispositivo</strong> tus datos de
+          acceso y preferencias guardadas localmente. Los registros de negocio
+          (pedidos, gastos, comisiones) no se borran — son contabilidad de la empresa.
+          Para el borrado formal de la cuenta escribe al correo de contacto (ver
+          <a href="/eliminar-cuenta.html" target="_blank" rel="noopener">esta página</a>).
+        </p>
+        <label style="display:flex; align-items:center; gap:8px; font-size:0.84rem; cursor:pointer; margin-bottom:10px;">
+          <input type="checkbox" id="ajustesEliminarConfirmar"> Entiendo y quiero continuar
+        </label>
+        <button type="button" class="btn btn-icon danger" id="btnEliminarCuenta" disabled
+                style="width:auto; padding:10px 18px; font-size:0.85rem;">🗑 Borrar mis datos de este dispositivo</button>
+        <p class="modal-status" id="ajustesEliminarStatus" style="margin-top:8px;"></p>
       </div>
       <!--
         La lista de cuentas del personal (correos, y para Piero también contraseñas) ya NO
