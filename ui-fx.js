@@ -351,7 +351,31 @@
   /* ===================================================================
      Arranque
      =================================================================== */
+  /* ===================================================================
+     MODO LIGERO / PAUSA (fase 0.6) — ahorra CPU/batería en Android de
+     gama baja y congela todo cuando la pestaña no se ve.
+     =================================================================== */
+  function initLite(){
+    var mem = navigator.deviceMemory || 8;
+    var cpu = navigator.hardwareConcurrency || 8;
+    var lento = mem <= 4 || cpu <= 4;
+    // También si el usuario lo forzó desde Ajustes (localStorage).
+    var forzado = false;
+    try { forzado = localStorage.getItem('wcs_modo_ligero') === '1'; } catch(_){}
+    if (lento || forzado) document.documentElement.classList.add('fx-lite');
+
+    document.addEventListener('visibilitychange', function(){
+      document.documentElement.classList.toggle('fx-paused', document.hidden);
+    });
+    // API pública para un toggle en Ajustes.
+    window.wcsModoLigero = function(on){
+      document.documentElement.classList.toggle('fx-lite', !!on);
+      try { localStorage.setItem('wcs_modo_ligero', on ? '1' : '0'); } catch(_){}
+    };
+  }
+
   ready(function(){
+    try { initLite(); }       catch(e){ console.warn('ui-fx lite', e); }
     try { initGelNav(); }    catch(e){ console.warn('ui-fx gelNav', e); }
     try { initPress(); }      catch(e){ console.warn('ui-fx press', e); }
     try { initMagnetic(); }   catch(e){ console.warn('ui-fx magnetic', e); }

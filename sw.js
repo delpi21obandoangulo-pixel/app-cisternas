@@ -12,7 +12,7 @@
    ============================================================================ */
 'use strict';
 
-var CACHE_VERSION = 'wcs-v5';
+var CACHE_VERSION = 'wcs-v6';
 var CACHE_NAME = 'watercore-' + CACHE_VERSION;
 var OFFLINE_URL = '/offline.html';
 var RUNTIME_MAX = 60;   // tope LRU del caché de estáticos de runtime
@@ -35,6 +35,15 @@ var PRECACHE = [
   '/icons/icon-192.png',
   '/icons/icon-512.png',
   '/icons/apple-touch-icon.png',
+  '/vendor/fonts/fonts.css',
+  '/vendor/fonts/inter-400.woff2',
+  '/vendor/fonts/inter-500.woff2',
+  '/vendor/fonts/inter-600.woff2',
+  '/vendor/fonts/inter-700.woff2',
+  '/vendor/fonts/inter-800.woff2',
+  '/vendor/fonts/ibmplexmono-500.woff2',
+  '/vendor/fonts/ibmplexmono-600.woff2',
+  '/vendor/fonts/ibmplexmono-700.woff2',
   '/vendor/leaflet/leaflet.js',
   '/vendor/leaflet/leaflet.css',
   '/vendor/supabase-js.js',

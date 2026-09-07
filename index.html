@@ -8,7 +8,7 @@
      otro hosting, una vista previa): sigue bloqueando scripts inline y hosts no listados,
      que es la mitigación clave del XSS almacenado. script-src NO lleva 'unsafe-inline':
      toda la lógica vive en app.js (externo) y no hay ni un solo on*="" en el HTML. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https://*.tile.openstreetmap.org; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://mwvyhjvafwimcdxfyutf.supabase.co wss://mwvyhjvafwimcdxfyutf.supabase.co https://nominatim.openstreetmap.org; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.tile.openstreetmap.org; font-src 'self'; connect-src 'self' https://mwvyhjvafwimcdxfyutf.supabase.co wss://mwvyhjvafwimcdxfyutf.supabase.co https://nominatim.openstreetmap.org; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>WaterCore Space</title>
@@ -25,9 +25,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="WaterCore">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<!-- Fuentes AUTO-HOSPEDADAS (subset latin) en /vendor/fonts — ya no se cargan de
+     Google Fonts: offline 100% y la CSP no necesita fonts.googleapis/gstatic. -->
+<link rel="stylesheet" href="/vendor/fonts/fonts.css">
+<link rel="preload" as="font" type="font/woff2" href="/vendor/fonts/inter-400.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="/vendor/fonts/inter-700.woff2" crossorigin>
 <!-- Leaflet (mapa del Hub Central, ver iniciarMapaHub()) — AUTO-HOSPEDADO en /vendor
      (Leaflet 1.9.4). Ya no se carga de ningún CDN: así la CSP puede ser
      script-src 'self' a secas. Si el archivo faltara, el campo de dirección del

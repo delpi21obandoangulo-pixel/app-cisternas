@@ -307,3 +307,35 @@ input:focus, select:focus, textarea:focus{
     transition-duration:.001ms !important;
   }
 }
+
+/* ------------------------------------------------------------------ *
+ * 10. MODO LIGERO (fase 0.6) — Android de gama baja / batería / pestaña
+ *     en segundo plano. Lo activa ui-fx.js (html.fx-lite / html.fx-paused).
+ * ------------------------------------------------------------------ */
+/* Dispositivo con poca RAM/CPU: se apagan las animaciones de fondo caras
+   (aurora con gradientes en movimiento, giro de 90s) y el backdrop-filter. */
+html.fx-lite body::before,
+html.fx-lite body::after{ animation:none !important; }
+html.fx-lite .btn-avanzar{ animation:none !important; }
+html.fx-lite .stat-tile,
+html.fx-lite .view-tabs,
+html.fx-lite .order-card{ backdrop-filter:none !important; -webkit-backdrop-filter:none !important; }
+
+/* Pestaña oculta: congela TODA animación/transición hasta volver. */
+html.fx-paused *, html.fx-paused *::before, html.fx-paused *::after{
+  animation-play-state:paused !important;
+}
+
+/* Listas largas de la agenda en móvil: saltar render/paint de lo que está
+   fuera de pantalla (Chromium; iOS 18+). El tamaño estimado evita saltos de
+   scroll. No aplica a la tarjeta en edición ni a las 6 primeras (LCP). */
+@media (pointer:coarse){
+  #timelineList > .order-card{
+    content-visibility:auto;
+    contain-intrinsic-size:0 240px;
+  }
+  #timelineList > .order-card.editing,
+  #timelineList > .order-card:nth-child(-n+6){
+    content-visibility:visible;
+  }
+}
