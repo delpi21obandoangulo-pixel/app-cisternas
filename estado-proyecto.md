@@ -117,7 +117,7 @@ Remoto: `origin` → `https://github.com/delpi21obandoangulo-pixel/app-cisternas
 
 ### Fase "web → app de celular" (en curso)
 Informe: `INFORME-APP-MOVIL.md` / `.docx` (rutas comparadas, paso a paso, tiendas).
-**Bitácora paso a paso: `bitacora/` (un archivo por fase) + espejo en Obsidian
+**Bitácora paso a paso: `bitacora/` (00-indice + fase-0-pwa + fase-1-bloqueantes) +
 `Brain/kunturmasha/agua/Bitácora — Web a App.md`. Todo avance se registra ahí.**
 Recomendación: PWA a producción → **Capacitor con assets empaquetados** para Google
 Play (registrar la cuenta como organización con D-U-N-S) → iOS diferido.

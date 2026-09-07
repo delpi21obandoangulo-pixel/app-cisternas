@@ -217,6 +217,26 @@ Commits de esta fase (rama `master`):
 
 ---
 
+### 0.6b — Minificación con esbuild                     [2026-09-06]  ✅ hecho · desplegado
+
+- **Qué se hizo:** `scripts/minify.mjs` (esbuild) genera `app.min.js`,
+  `ui-fx.min.js`, `pwa.min.js`. `index.html` apunta a los `.min.js`; el código
+  fuente legible (`app.js`, etc.) se conserva para editar. `sw.js`
+  (`NETWORK_FIRST` + `PRECACHE`) y `vercel.json` actualizados a `.min.js`.
+  `CACHE_VERSION` → `wcs-v7`.
+  - `app.js` 279 KB → `app.min.js` **135 KB (−52 %)**; ui-fx 18→9 KB; pwa 4→1.8 KB.
+- **Por qué:** cierra el `unminified-javascript` FAIL de Lighthouse y baja el tiempo
+  de *parse* en CPU lenta.
+- **Flujo nuevo:** tras editar `app.js`/`ui-fx.js`/`pwa.js` hay que correr
+  `node scripts/minify.mjs` **antes** de `npx vercel --prod`.
+- **Commit:** `582c94e`
+- **Verificación:** Lighthouse re-run → `unminified-javascript` **PASS**. App
+  funcional con los `.min.js` (globals, nav, back, flete, APIs de ui-fx).
+  El número de "Performance" osciló 57–65 entre corridas: el runner headless de
+  este entorno estaba bajo presión de memoria → ruido; el audit relevante pasó.
+
+---
+
 ### 0.10 — `assetlinks.json`                             — ⬜ solo si TWA
 
 Placeholder no creado. Solo hace falta si al final se opta por **TWA/Bubblewrap**

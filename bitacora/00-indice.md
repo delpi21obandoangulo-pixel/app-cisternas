@@ -13,8 +13,8 @@ lo que queda pendiente.
 | Fase | Archivo | Estado |
 |---|---|---|
 | Informe base | [`../INFORME-APP-MOVIL.md`](../INFORME-APP-MOVIL.md) / `.docx` | ✅ entregado |
-| **Fase 0 — Endurecer la PWA** | [`fase-0-pwa.md`](fase-0-pwa.md) | 🟡 en curso (0.1–0.9 hechos; 0.2 y minificación diferidos) |
-| Fase 1 — Bloqueantes de tienda | `fase-1-bloqueantes.md` | ⬜ sin empezar |
+| **Fase 0 — Endurecer la PWA** | [`fase-0-pwa.md`](fase-0-pwa.md) | 🟡 0.1–0.9 + 0.6b (minificación) hechos y desplegados; 0.2 (capturas reales) diferido |
+| **Fase 1 — Bloqueantes de tienda** | [`fase-1-bloqueantes.md`](fase-1-bloqueantes.md) | 🟡 1.2/1.3/1.4 adelantados (parte autónoma); 1.1 pendiente (decisión del dueño) |
 | Fase 2 — Capacitor (Android) | `fase-2-capacitor.md` | ⬜ sin empezar |
 | Fase 3 — Push notifications | `fase-3-push.md` | ⬜ sin empezar |
 | Fase 4 — iOS | `fase-4-ios.md` | ⬜ diferido |
