@@ -2,6 +2,25 @@
   'use strict';
 
   /* ==========================================================================
+     RESET "RENACIDO" (2026-09-07) — se borran TODAS las cuentas de personal
+     viejas (admin/chofer/promotor/ayudante y las 150 del Directorio Central) y
+     los datos guardados en este navegador de la etapa anterior. Ahora solo hay
+     5 cuentas con acceso total (acceso1..5@watercorespace.pe). Esta comprobación
+     corre UNA vez por navegador: si la marca no coincide, limpia el localStorage
+     propio de la app (claves kunturmasha_* y sedeCentral_*) y deja la marca.
+     Cambia RESET_MARCA si hay que forzar otra limpieza en el futuro.
+     ========================================================================== */
+  var RESET_MARCA = 'renacido-2026-09-07';
+  try{
+    if(localStorage.getItem('wcs_reset') !== RESET_MARCA){
+      Object.keys(localStorage).forEach(function(k){
+        if(k.indexOf('kunturmasha') === 0 || k.indexOf('sedeCentral_') === 0) localStorage.removeItem(k);
+      });
+      localStorage.setItem('wcs_reset', RESET_MARCA);
+    }
+  }catch(e){}
+
+  /* ==========================================================================
      Cliente de Supabase — se crea una sola vez, apenas arranca el script. Solo lo usa
      la sincronización de pedidos/gastos entre dispositivos (ver iniciarSupabase() más
      abajo); el login del personal (correo/contraseña) ya NO depende de esto — se valida
@@ -103,37 +122,17 @@
   // (cred.rol), como siempre.
   // "superAdmin": Piero, cuenta maestra — accesoGlobal + los 4 roles de personal a la vez
   // (Administrador/Chofer/Ayudante/Promotor), pensada para pruebas y soporte de toda la red.
+  // RENACIDO (2026-09-07): ya NO hay cuentas de administrador/chofer/ayudante/promotor
+  // por empresa, ni el Directorio Central de 150. Solo estas 5 cuentas, TODAS con
+  // acceso total: los 4 roles a la vez (roles), acceso a todas las empresas
+  // (accesoGlobal) y la cuenta maestra (superAdmin) — ven absolutamente toda la web.
+  // Contraseña compartida `watercore2026` (cámbiala si quieres una por cuenta).
   var CREDENCIALES_PERSONAL = [
-    { email: 'piero@watercorespace.pe', password: 'piero2026', rol: 'Administrador', roles: ['admin', 'chofer', 'ayudante', 'promotor'], nombre: 'Piero (SuperAdmin)', personaId: 'piero', empresaId: 'watercore-space', accesoGlobal: true, superAdmin: true },
-    { email: 'admin@watercorespace.pe', password: 'watercore2026', rol: 'Administrador', nombre: 'Equipo WaterCore Space (Admin)', personaId: 'watercore-admin', empresaId: 'watercore-space', accesoGlobal: true },
-    { email: 'admin1@kunturmasha.pe', password: 'admin2026', rol: 'Administrador', nombre: 'Piero (Admin)', parejaEmail: 'chofer1@kunturmasha.pe', personaId: 'piero', empresaId: 'kunturmasha' },
-    { email: 'admin2@kunturmasha.pe', password: 'admin2026', rol: 'Administrador', nombre: 'Frank (Admin)', personaId: 'frank', empresaId: 'kunturmasha' },
-    { email: 'admin3@kunturmasha.pe', password: 'admin2026', rol: 'Administrador', nombre: 'Shimo (Admin)', personaId: 'shimo', empresaId: 'kunturmasha' },
-    { email: 'chofer1@kunturmasha.pe', password: 'chofer2026', rol: 'Chofer', nombre: 'Piero (Chofer)', parejaEmail: 'admin1@kunturmasha.pe', personaId: 'piero', empresaId: 'kunturmasha' },
-    { email: 'chofer2@kunturmasha.pe', password: 'chofer2026', rol: 'Chofer', nombre: 'Frank (Chofer)', personaId: 'frank', empresaId: 'kunturmasha' },
-    { email: 'chofer3@kunturmasha.pe', password: 'chofer2026', rol: 'Chofer', nombre: 'Shimo (Chofer)', personaId: 'shimo', empresaId: 'kunturmasha' },
-    { email: 'promotor1@kunturmasha.pe', password: 'promotor2026', rol: 'Promotor', nombre: 'Ronald (Promotor)', personaId: 'ronald', empresaId: 'kunturmasha' },
-    { email: 'promotor2@kunturmasha.pe', password: 'promotor2026', rol: 'Promotor', nombre: 'Jherson (Promotor)', personaId: 'jherson', empresaId: 'kunturmasha' },
-    { email: 'promotor3@kunturmasha.pe', password: 'promotor2026', rol: 'Promotor', nombre: 'Promotor 3', personaId: 'promotor3', empresaId: 'kunturmasha' },
-    { email: 'promotor4@kunturmasha.pe', password: 'promotor2026', rol: 'Promotor', nombre: 'Promotor 4', personaId: 'promotor4', empresaId: 'kunturmasha' },
-    { email: 'promotor5@kunturmasha.pe', password: 'promotor2026', rol: 'Promotor', nombre: 'Promotor 5', personaId: 'promotor5', empresaId: 'kunturmasha' },
-    { email: 'admin@aquatrujillo.pe', password: 'admin2026', rol: 'Administrador', nombre: 'Admin AquaTrujillo', personaId: 'admin-aquatrujillo', empresaId: 'aqua-trujillo' },
-    { email: 'chofer@aquatrujillo.pe', password: 'chofer2026', rol: 'Chofer', nombre: 'Chofer AquaTrujillo 1', personaId: 'chofer-aquatrujillo-1', empresaId: 'aqua-trujillo' },
-    { email: 'admin@gotadorada.pe', password: 'admin2026', rol: 'Administrador', nombre: 'Admin Gota Dorada', personaId: 'admin-gotadorada', empresaId: 'gota-dorada' },
-    { email: 'chofer@gotadorada.pe', password: 'chofer2026', rol: 'Chofer', nombre: 'Chofer Gota Dorada 1', personaId: 'chofer-gotadorada-1', empresaId: 'gota-dorada' },
-    { email: 'admin@cisternaselvalle.pe', password: 'admin2026', rol: 'Administrador', nombre: 'Admin Cisternas El Valle', personaId: 'admin-cisternaselvalle', empresaId: 'cisternas-el-valle' },
-    { email: 'chofer@cisternaselvalle.pe', password: 'chofer2026', rol: 'Chofer', nombre: 'Chofer Cisternas El Valle 1', personaId: 'chofer-cisternaselvalle-1', empresaId: 'cisternas-el-valle' },
-    // Pozo Cangrejo Loco — segunda empresa asociada. Arranca SIN personal confirmado: su
-    // Administrador arma la plantilla desde Ajustes → "Personal de la empresa" eligiendo
-    // correos de este pool (o escribiendo uno nuevo), poniéndoles nombre y roles. Hasta que
-    // los confirme, no aparecen en Despacho, Agenda, Contabilidad ni billeteras (contabilidad
-    // en 0). Estos correos son solo el pool disponible; el aislamiento por empresaId sigue
-    // siendo estricto (ver actualizarSelectorEmpresa() y plantillaEmpresas más abajo).
-    { email: 'admin1@pozocangrejoloco.pe', password: 'admin2026', rol: 'Administrador', nombre: 'Admin 1 (Pozo Cangrejo Loco)', empresaId: 'pozo-cangrejo-loco' },
-    { email: 'admin2@pozocangrejoloco.pe', password: 'admin2026', rol: 'Administrador', nombre: 'Admin 2 (Pozo Cangrejo Loco)', empresaId: 'pozo-cangrejo-loco' },
-    { email: 'chofer1@pozocangrejoloco.pe', password: 'chofer2026', rol: 'Chofer', nombre: 'Chofer 1 (Pozo Cangrejo Loco)', empresaId: 'pozo-cangrejo-loco' },
-    { email: 'chofer2@pozocangrejoloco.pe', password: 'chofer2026', rol: 'Chofer', nombre: 'Chofer 2 (Pozo Cangrejo Loco)', empresaId: 'pozo-cangrejo-loco' },
-    { email: 'promotor1@pozocangrejoloco.pe', password: 'promotor2026', rol: 'Promotor', nombre: 'Promotor 1 (Pozo Cangrejo Loco)', empresaId: 'pozo-cangrejo-loco' }
+    { email: 'acceso1@watercorespace.pe', password: 'watercore2026', rol: 'Administrador', roles: ['admin', 'chofer', 'ayudante', 'promotor'], nombre: 'Acceso 1', personaId: 'acceso1', empresaId: 'watercore-space', accesoGlobal: true, superAdmin: true },
+    { email: 'acceso2@watercorespace.pe', password: 'watercore2026', rol: 'Administrador', roles: ['admin', 'chofer', 'ayudante', 'promotor'], nombre: 'Acceso 2', personaId: 'acceso2', empresaId: 'watercore-space', accesoGlobal: true, superAdmin: true },
+    { email: 'acceso3@watercorespace.pe', password: 'watercore2026', rol: 'Administrador', roles: ['admin', 'chofer', 'ayudante', 'promotor'], nombre: 'Acceso 3', personaId: 'acceso3', empresaId: 'watercore-space', accesoGlobal: true, superAdmin: true },
+    { email: 'acceso4@watercorespace.pe', password: 'watercore2026', rol: 'Administrador', roles: ['admin', 'chofer', 'ayudante', 'promotor'], nombre: 'Acceso 4', personaId: 'acceso4', empresaId: 'watercore-space', accesoGlobal: true, superAdmin: true },
+    { email: 'acceso5@watercorespace.pe', password: 'watercore2026', rol: 'Administrador', roles: ['admin', 'chofer', 'ayudante', 'promotor'], nombre: 'Acceso 5', personaId: 'acceso5', empresaId: 'watercore-space', accesoGlobal: true, superAdmin: true }
   ];
   function buscarCredencial(email){
     var norm = String(email || '').trim().toLowerCase();
@@ -153,21 +152,11 @@
      (un correo de promotor puntual) para no perder los pedidos ya registrados.
      ========================================================================== */
   var PERSONAS = [
-    { id: 'watercore-admin', nombre: 'Equipo WaterCore Space (Admin)', emails: ['admin@watercorespace.pe'] },
-    { id: 'piero', nombre: 'Piero (Admin / Chofer / SuperAdmin)', emails: ['admin1@kunturmasha.pe', 'chofer1@kunturmasha.pe', 'piero@watercorespace.pe'] },
-    { id: 'frank', nombre: 'Frank (Admin / Chofer)', emails: ['admin2@kunturmasha.pe', 'chofer2@kunturmasha.pe'] },
-    { id: 'shimo', nombre: 'Shimo (Admin / Chofer)', emails: ['admin3@kunturmasha.pe', 'chofer3@kunturmasha.pe'] },
-    { id: 'ronald', nombre: 'Ronald (Promotor)', emails: ['promotor1@kunturmasha.pe'] },
-    { id: 'jherson', nombre: 'Jherson (Promotor)', emails: ['promotor2@kunturmasha.pe'] },
-    { id: 'promotor3', nombre: 'Promotor 3', emails: ['promotor3@kunturmasha.pe'] },
-    { id: 'promotor4', nombre: 'Promotor 4', emails: ['promotor4@kunturmasha.pe'] },
-    { id: 'promotor5', nombre: 'Promotor 5', emails: ['promotor5@kunturmasha.pe'] },
-    { id: 'admin-aquatrujillo', nombre: 'Admin AquaTrujillo', emails: ['admin@aquatrujillo.pe'] },
-    { id: 'chofer-aquatrujillo-1', nombre: 'Chofer AquaTrujillo 1', emails: ['chofer@aquatrujillo.pe'] },
-    { id: 'admin-gotadorada', nombre: 'Admin Gota Dorada', emails: ['admin@gotadorada.pe'] },
-    { id: 'chofer-gotadorada-1', nombre: 'Chofer Gota Dorada 1', emails: ['chofer@gotadorada.pe'] },
-    { id: 'admin-cisternaselvalle', nombre: 'Admin Cisternas El Valle', emails: ['admin@cisternaselvalle.pe'] },
-    { id: 'chofer-cisternaselvalle-1', nombre: 'Chofer Cisternas El Valle 1', emails: ['chofer@cisternaselvalle.pe'] }
+    { id: 'acceso1', nombre: 'Acceso 1', emails: ['acceso1@watercorespace.pe'] },
+    { id: 'acceso2', nombre: 'Acceso 2', emails: ['acceso2@watercorespace.pe'] },
+    { id: 'acceso3', nombre: 'Acceso 3', emails: ['acceso3@watercorespace.pe'] },
+    { id: 'acceso4', nombre: 'Acceso 4', emails: ['acceso4@watercorespace.pe'] },
+    { id: 'acceso5', nombre: 'Acceso 5', emails: ['acceso5@watercorespace.pe'] }
   ];
   function personaDeCredencial(cred){
     if(!cred) return null;
@@ -206,10 +195,8 @@
   // manejar, 'promotor' por traer clientes) — sin esto, un correo que aparece en las dos listas
   // (chofer1@... es cuenta de Chofer Y parte de la persona "piero" en PERSONAS) contaría el
   // mismo ajuste dos veces. Ver calcularComisionesChofer()/calcularComisionesPromotor().
-  var AJUSTES_HISTORICOS = [
-    { email: 'chofer1@kunturmasha.pe', fecha: '2026-08-21', monto: 110.00, concepto: 'Saldo acumulado registrado', tipo: 'chofer' },
-    { email: 'promotor1@kunturmasha.pe', fecha: '2026-08-21', monto: 70.00, concepto: 'Saldo acumulado registrado', tipo: 'promotor' }
-  ];
+  // RENACIDO: sin ajustes arrastrados. Todas las billeteras empiezan en 0.
+  var AJUSTES_HISTORICOS = [];
 
   // Nombre "visible" editable por la propia persona desde Mi Perfil — se guarda por correo en
   // este navegador (localStorage), NUNCA reemplaza cred.nombre (el que usan el <select> de
@@ -276,38 +263,26 @@
   // permitía que un cambio de tasa quedara desincronizado entre la comisión de Sede Central y
   // la de choferes/promotores. Ahora las tres se calculan desde esta misma constante.
   var COMISION_ESTANDAR = 0.05;
+  // RENACIDO: las 6 empresas siguen existiendo pero TODAS arrancan en 0 — sin
+  // choferes de ejemplo, sin plantilla, sin pedidos ni gastos. Su personal se arma
+  // desde Ajustes → "Personal de la empresa" (o desde las 5 cuentas de acceso total).
   var EMPRESAS = [
     { id: 'watercore-space', nombre: 'WaterCore Space', esSedeCentral: true, comisionPeaje: COMISION_ESTANDAR, choferesDemo: [] },
     { id: 'kunturmasha', nombre: 'Kunturmasha', esSedeCentral: false, comisionPeaje: COMISION_ESTANDAR, choferesDemo: [] },
     { id: 'pozo-cangrejo-loco', nombre: 'Pozo Cangrejo Loco', esSedeCentral: false, comisionPeaje: COMISION_ESTANDAR, choferesDemo: [] },
-    { id: 'aqua-trujillo', nombre: 'AquaTrujillo', esSedeCentral: false, comisionPeaje: COMISION_ESTANDAR, choferesDemo: ['Chofer AquaTrujillo 1'] },
-    { id: 'gota-dorada', nombre: 'Gota Dorada', esSedeCentral: false, comisionPeaje: COMISION_ESTANDAR, choferesDemo: ['Chofer Gota Dorada 1'] },
-    { id: 'cisternas-el-valle', nombre: 'Cisternas El Valle', esSedeCentral: false, comisionPeaje: COMISION_ESTANDAR, choferesDemo: ['Chofer Cisternas El Valle 1'] }
+    { id: 'aqua-trujillo', nombre: 'AquaTrujillo', esSedeCentral: false, comisionPeaje: COMISION_ESTANDAR, choferesDemo: [] },
+    { id: 'gota-dorada', nombre: 'Gota Dorada', esSedeCentral: false, comisionPeaje: COMISION_ESTANDAR, choferesDemo: [] },
+    { id: 'cisternas-el-valle', nombre: 'Cisternas El Valle', esSedeCentral: false, comisionPeaje: COMISION_ESTANDAR, choferesDemo: [] }
   ];
 
   /* ==========================================================================
-     Directorio Central de Accesos (solo visible para piero@watercorespace.pe, ver
-     renderDirectorioCentral()): 150 cuentas de prueba — 10 para cada uno de los 3 roles
-     operativos (Administrador, Chofer, Ayudante) en cada una de las 5 empresas asociadas
-     (no Sede Central: WaterCore Space no tiene su propia flota). Se generan una sola vez al
-     cargar la página, no en cada render, y se agregan a CREDENCIALES_PERSONAL para que sean
-     cuentas de verdad (se puede iniciar sesión con cualquiera): así Piero puede copiarle a
-     una empresa credenciales ya listas para su Administrador/Chofer/Ayudante en vez de
-     inventarlas a mano cada vez. La contraseña (8 dígitos) sale de un hash simple del correo
-     — no es criptográficamente aleatoria, pero es fija: no cambia entre recargas de la
-     página, como el resto de CREDENCIALES_PERSONAL.
+     RENACIDO (2026-09-07): el "Directorio Central de Accesos" de 150 cuentas de
+     prueba se ELIMINÓ por completo. Solo quedan las 5 cuentas de acceso total de
+     arriba. `passwordOchoDigitos` se conserva porque lo usan asegurarPersonaPorCorreo()
+     y aplicarPlantillaACredenciales() para derivar contraseñas de correos que un
+     Administrador escriba a mano en Ajustes → "Personal de la empresa".
      ========================================================================== */
-  var DIRECTORIO_APELLIDOS = ['garcia', 'rodriguez', 'vargas', 'soto', 'quispe', 'flores', 'ramos', 'castillo', 'medina', 'torres'];
-  var DIRECTORIO_PALABRAS_ROL = {
-    Administrador: ['operaciones', 'gestion', 'oficina', 'control', 'coordinacion', 'despacho', 'planilla', 'contable', 'logistica', 'administracion'],
-    Chofer: ['ruta.norte', 'ruta.sur', 'ruta.este', 'cisterna.uno', 'cisterna.dos', 'flota.a', 'flota.b', 'reparto', 'entrega', 'camion'],
-    Ayudante: ['tanque', 'manguera', 'apoyo.campo', 'campo', 'descarga', 'soporte', 'cuadrilla', 'obra', 'servicio', 'turno']
-  };
-  function capitalizarPalabra(s){
-    return s.split(/[.\s]+/).map(function(w){ return w.charAt(0).toUpperCase() + w.slice(1); }).join(' ');
-  }
-  // Hash simple y determinístico (no Math.random, para que el resultado sea siempre el mismo)
-  // — convierte el correo en 8 dígitos, rellenando con ceros a la izquierda si hace falta.
+  // Hash simple y determinístico (no Math.random) — correo -> 8 dígitos.
   function passwordOchoDigitos(seed){
     var h = 0;
     for(var i = 0; i < seed.length; i++){ h = (h * 31 + seed.charCodeAt(i)) >>> 0; }
@@ -315,30 +290,7 @@
     while(s.length < 8) s = '0' + s;
     return s;
   }
-  function generarDirectorioCentral(){
-    var cuentas = [];
-    EMPRESAS.filter(function(e){ return !e.esSedeCentral; }).forEach(function(empresa){
-      var dominio = (empresa.id + '.pe').replace(/-/g, '');
-      ['Administrador', 'Chofer', 'Ayudante'].forEach(function(rol){
-        for(var i = 0; i < 10; i++){
-          var apellido = DIRECTORIO_APELLIDOS[i];
-          var palabra = DIRECTORIO_PALABRAS_ROL[rol][i];
-          // Alterna el orden ("palabra.apellido" / "apellido.palabra") para que las 150
-          // cuentas no luzcan todas con el mismo patrón — ej. "operaciones.garcia@..." y
-          // "soto.ruta.norte@..." conviven en la misma matriz.
-          var local = (i % 2 === 0) ? (palabra + '.' + apellido) : (apellido + '.' + palabra);
-          var email = local + '@' + dominio;
-          cuentas.push({
-            email: email, password: passwordOchoDigitos(email), rol: rol,
-            nombre: capitalizarPalabra(apellido) + ' ' + capitalizarPalabra(palabra),
-            empresaId: empresa.id, directorioCentral: true
-          });
-        }
-      });
-    });
-    return cuentas;
-  }
-  CREDENCIALES_PERSONAL = CREDENCIALES_PERSONAL.concat(generarDirectorioCentral());
+  function generarDirectorioCentral(){ return []; }   // vaciado: ver nota RENACIDO
 
   /* ==========================================================================
      Plantilla de personal por empresa (editable desde Ajustes → "Personal de la
@@ -3999,11 +3951,10 @@
   });
 
   /* ---------- Ajustes: cuenta propia + lista fija de personal ---------- */
-  // La lista de cuentas del personal (correo + contraseña) ya no se muestra en el perfil de
-  // administradores normales — cada empresa solo administra la suya, no ve las credenciales
-  // de las demás. Únicamente piero@watercorespace.pe (cuenta maestra) ve aquí el "Directorio
-  // Central de Accesos" con las 150 cuentas generadas (ver generarDirectorioCentral()).
-  var PIERO_SUPERADMIN_EMAIL = 'piero@watercorespace.pe';
+  // RENACIDO: el "Directorio Central de Accesos" de 150 cuentas se eliminó, así que
+  // su panel ya no se muestra a nadie (esPiero queda siempre false más abajo). La
+  // constante se conserva solo por si algún día se reintroduce algo parecido.
+  var PIERO_SUPERADMIN_EMAIL = 'acceso1@watercorespace.pe';
   // "Eliminar mi cuenta" (Ajustes) — visible para cualquier personal con sesión.
   // Hoy no hay cuenta en el servidor (el login es de cliente, ver INFORME-AUDITORIA);
   // lo que se puede hacer es limpiar ESTE dispositivo y cerrar sesión. El borrado
@@ -4041,7 +3992,7 @@
     // El panel "Personal de la empresa" lo ve cualquier Administrador (para SU empresa);
     // el Directorio Central de Accesos, solo la cuenta maestra. Otros roles no ven nada.
     var esAdmin = rolDbActual === 'Administrador';
-    var esPiero = !!(usuarioActual && usuarioActual.email === PIERO_SUPERADMIN_EMAIL);
+    var esPiero = false;   // RENACIDO: el Directorio Central se eliminó -> su panel no se muestra
     if(!esAdmin){ wrap.innerHTML = ''; wrap.dataset.montado = ''; return; }
     // Reconstruye el cascarón si nunca se montó o si cambió quién lo mira (el Directorio
     // Central solo debe existir en el DOM cuando lo ve la cuenta maestra).
