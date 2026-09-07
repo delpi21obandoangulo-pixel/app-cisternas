@@ -225,6 +225,70 @@ de "Compartir → Añadir a pantalla de inicio".
 
 ---
 
-_Detalle completo de cada investigación: transcripciones de los 3 agentes (Fable) de esta
-sesión. Siguiente acción: **Fase 0, paso 0.1 — generar el set de iconos PNG + manifest
-completo.**_
+---
+
+## Progreso de la Fase 0 (2026-09-06)
+
+Hecho y desplegado en `https://kunturmasha.vercel.app` (verificado en vivo):
+
+- **0.1** iconos PNG (192/512 + maskable 192/512 + apple-touch 180 + 3 shortcuts) +
+  manifest completo (`id`, `screenshots`, `launch_handler`, `display_override`,
+  `handle_links`, iconos de shortcuts). Elimina el bug de instalabilidad del SVG
+  con `sizes:"any"`. `apple-touch-icon` PNG + `mobile-web-app-capable`.
+- **0.3** `sw.js` v6: sin `skipWaiting()` automático (el aviso "nueva versión" de
+  `pwa.js` lo dispara), `navigationPreload`, `offline.html` (devuelve 200 → un TWA
+  no crashea) como último recurso, poda LRU. `pwa.js`: `navigator.storage.persist()`
+  + `updateViaCache:'none'`.
+- **0.4** CSS móvil (aditivo, solo táctil): `env(safe-area-inset-*)` en `body` y
+  `.view-tabs` sticky; **inputs a 16px** bajo `pointer:coarse` (mata el zoom de
+  iOS); `min-height:100svh`; objetivos táctiles a **48px** (incluye `select`,
+  `input[type=date]`, `empresa-switch`, acciones de fila); `overscroll-behavior-y:none`
+  (mata el pull-to-refresh) + `contain` en scrollables; `@media (hover:none)`
+  neutraliza los `:hover` con transform pegados; `user-select:none` en controles.
+- **0.5** `inputmode`/`enterkeyhint`/`autocomplete` en `telefono`, `precio`,
+  `volumenM3`, `gastoMonto`, `fleteVolumen`, `detalleUbicacion` y los del Hub.
+- **0.6** (parte segura) modo ligero: `html.fx-lite` automático si
+  `deviceMemory<=4`/`hardwareConcurrency<=4` (o `localStorage.wcs_modo_ligero=1`;
+  API `window.wcsModoLigero(on)` para un toggle en Ajustes) → apaga aurora, giro
+  90s, `breathe` y `backdrop-filter`. `html.fx-paused` con `visibilitychange` →
+  congela toda animación cuando la pestaña no se ve. `content-visibility:auto` en
+  las tarjetas de agenda fuera de pantalla (móvil), salvo la editada y las 6
+  primeras. Verificado: los `pointermove` de magnetic/tilt no se registran en
+  táctil (early-return por `pointer:coarse`).
+- **0.7** botón "atrás" de Android: `history.pushState` por vista + `popstate`
+  (1º cierra modal abierto, si no vuelve a la vista anterior; nunca sale de golpe).
+  Base para el `App.backButton` de Capacitor. Verificado.
+- **0.8** fuentes **auto-hospedadas** (Inter 400–800 + IBM Plex Mono 500–700,
+  subset latin) en `/vendor/fonts/`. Fuera Google Fonts y sus entradas de CSP
+  (`style-src`/`font-src`). `preload` de `inter-400/700`. Al precache del SW.
+- **Fix** `Permissions-Policy` estaba en `geolocation=()` (bloqueaba "usar mi
+  ubicación" del Hub) → `geolocation=(self)`.
+
+### Lighthouse móvil (línea base, `auditorias/lighthouse-movil-20260906.*`)
+
+| Categoría | Score |
+|---|---|
+| Best Practices | **100** |
+| Performance | **65** (mejora por venir con la minificación de `app.js` — Fase 2) |
+
+Audits móviles clave: `viewport` PASS · `font-size` PASS (97 % legible, ayudó el
+cambio a 16px) · `uses-passive-event-listeners` PASS · `errors-in-console` PASS ·
+`uses-text-compression` PASS · `dom-size` PASS (660) · `unminified-javascript`
+**FAIL** (~26 KiB — se resuelve minificando en Fase 2).
+Métricas: FCP 2.0 s · LCP 4.6 s · TBT 440 ms · CLS 0.149 · TTI 5.0 s.
+El hallazgo "Avoid multiple page redirects — 4.8 s" es un **artefacto del test**
+(cuenta el 308 `http→https`; los usuarios reales entran por `https://` y la PWA
+instalada usa `start_url` directa → 0 redirects).
+
+### Fase 0 — pendiente
+- **0.2** capturas reales del manifest (hoy hay placeholders de marca). Requiere el
+  navegador de captura, que en este entorno da error "0 width" — hacerlas a mano o
+  en CI.
+- **0.6 minificación** de `app.js`/`ui-fx.js` + code-splitting → **Fase 2** (esbuild
+  dentro de `scripts/build-www.mjs` al montar Capacitor). Objetivo: Performance ≥ 80.
+- **0.9** re-correr Lighthouse tras la minificación y en un teléfono real de gama baja.
+- **0.10** `assetlinks.json` — solo si al final se opta por TWA en vez de Capacitor.
+
+Siguiente bloque recomendado: los **bloqueantes de tienda** (login → Supabase Auth
+o gateway + rotar claves; política de privacidad + borrado de cuenta; sync sin
+conflictos), y luego **Fase 2 — Capacitor**.
