@@ -860,7 +860,33 @@
     }catch(e){ /* sin localStorage o dato corrupto: usamos los iniciales */ }
     return migrarPedidos(PEDIDOS_INICIALES.slice());
   }
+  /* ==========================================================================
+     Sello de tiempo por fila (updatedAt) para resolver conflictos en la
+     sincronización (ver fusionarPorId). Se re-sella SOLO la fila que cambió
+     respecto a la última vez que se guardó — así el `updatedAt` refleja de
+     verdad "cuándo se tocó por última vez", y en un merge gana la más reciente
+     en vez de "la remota siempre". stringifyEstable ignora el orden de claves y
+     el propio updatedAt para comparar contenido.
+     ========================================================================== */
+  var _firmasPedidos = {};
+  function firmaContenido(o){
+    var c = {};
+    Object.keys(o).forEach(function(k){ if(k !== 'updatedAt' && k !== '__clave' && k !== '__fxNum') c[k] = o[k]; });
+    return stringifyEstable(c);
+  }
+  function sellarCambios(lista, firmas){
+    var ahora = new Date().toISOString();
+    lista.forEach(function(x){
+      var f = firmaContenido(x);
+      if(!x.updatedAt || firmas[x.id] !== f){ x.updatedAt = ahora; }
+      firmas[x.id] = f;
+    });
+    // olvida firmas de filas borradas
+    Object.keys(firmas).forEach(function(id){ if(!lista.some(function(x){ return x.id === id; })) delete firmas[id]; });
+  }
+
   function guardarPedidos(){
+    if(!supaAplicandoRemoto) sellarCambios(pedidos, _firmasPedidos);
     try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(pedidos)); }
     catch(e){ /* sigue funcionando solo en memoria si falla el guardado */ }
     // Si Supabase está conectado, empuja el estado actual de pedidos al servidor.
@@ -2224,7 +2250,9 @@
     }catch(e){}
     return [];
   }
+  var _firmasGastos = {};
   function guardarGastos(){
+    if(!supaAplicandoRemoto) sellarCambios(gastos, _firmasGastos);
     try{ localStorage.setItem(GASTOS_KEY, JSON.stringify(gastos)); }catch(e){}
     if(supaListo && !supaAplicandoRemoto) reconciliarRemoto('gastos', gastos, gastoARemoto);
   }
@@ -2884,6 +2912,7 @@
 
   var supaListo = false;           // true solo tras la primera sincronización exitosa
   var supaAplicandoRemoto = false; // true mientras se aplican datos que llegaron del servidor (evita reenviarlos de vuelta)
+  var soportaUpdatedAt = false;    // ¿la BD tiene la columna updated_at? (feature-detect en iniciarSupabase)
   var supaDebounce = {};           // temporizadores para agrupar varios cambios de Realtime en un solo refresco
 
   function actualizarIndicadorSupabase(activo){
@@ -2894,8 +2923,15 @@
   }
 
   // ---- Conversión de forma: nuestros objetos en JS (camelCase) <-> filas de Postgres (snake_case) ----
+  // Añade updated_at al payload SOLO si la BD tiene esa columna (feature-detect en
+  // iniciarSupabase). Antes de correr la migración de supabase_schema.sql,
+  // soportaUpdatedAt = false y el payload va como siempre (sin regresión).
+  function conUpdatedAt(remoto, obj){
+    if(soportaUpdatedAt) remoto.updated_at = (obj && obj.updatedAt) || new Date().toISOString();
+    return remoto;
+  }
   function pedidoARemoto(p){
-    return {
+    return conUpdatedAt({
       id: p.id, fecha: p.fecha, orden: p.orden || 0, cliente: p.cliente || '',
       codigo_cliente: p.codigoCliente || '', ubicacion: p.ubicacion || '',
       hora_inicio: p.horaInicio || '', hora_fin: p.horaFin || '', precio: Number(p.precio) || 0,
@@ -2909,7 +2945,7 @@
       // numérico) es válido y debe llegar como número, nunca como null — Supabase no debe
       // recibir null aquí (ver también solicitudARemoto(), que ya usaba este mismo patrón).
       volumen_m3: Number(p.volumenM3) || 0, metodo_pago: p.metodoPago || ''
-    };
+    }, p);
   }
   function pedidoDesdeRemoto(r){
     return {
@@ -2919,25 +2955,41 @@
       dificultad: r.dificultad, manguera: r.manguera, notas: r.notas, estado: r.estado,
       motivoCancelacion: r.motivo_cancelacion, tiempos: r.tiempos, promotorEmail: r.promotor_email || '',
       telefono: r.telefono || '', empresaId: r.empresa_id || 'kunturmasha',
-      volumenM3: r.volumen_m3 || 0, metodoPago: r.metodo_pago || ''
+      volumenM3: r.volumen_m3 || 0, metodoPago: r.metodo_pago || '',
+      updatedAt: r.updated_at || null
     };
   }
   function gastoARemoto(g){
-    return { id: g.id, fecha: g.fecha, categoria: g.categoria || '', descripcion: g.descripcion || '', monto: Number(g.monto) || 0, empresa_id: g.empresaId || 'kunturmasha' };
+    return conUpdatedAt({ id: g.id, fecha: g.fecha, categoria: g.categoria || '', descripcion: g.descripcion || '', monto: Number(g.monto) || 0, empresa_id: g.empresaId || 'kunturmasha' }, g);
   }
   function gastoDesdeRemoto(r){
     // sanText(): la fila puede haber sido escrita por cualquiera con la anon key (ver sanText).
-    return { id: sanText(r.id, 80), fecha: r.fecha, categoria: sanText(r.categoria, 120), descripcion: sanText(r.descripcion, 400), monto: r.monto, empresaId: sanText(r.empresa_id, 80) || 'kunturmasha' };
+    return { id: sanText(r.id, 80), fecha: r.fecha, categoria: sanText(r.categoria, 120), descripcion: sanText(r.descripcion, 400), monto: r.monto, empresaId: sanText(r.empresa_id, 80) || 'kunturmasha', updatedAt: r.updated_at || null };
   }
 
-  // Combina lo que había en este navegador con lo que ya existía en Supabase al conectar
-  // por primera vez: si un id existe en ambos lados, gana la versión remota (se asume que
-  // puede venir de otro dispositivo más reciente); los ids que solo existían en este
-  // navegador se conservan igual, y luego se suben.
+  // Combina lo que hay en este navegador con lo que hay en Supabase. Si un id
+  // existe en ambos lados: gana la versión con `updatedAt` MÁS RECIENTE (así dos
+  // dispositivos que editaron el mismo pedido no se pisan sin más — antes ganaba
+  // siempre la remota). Si alguna de las dos no tiene `updatedAt` (fila vieja,
+  // escrita por otra vía), se conserva el comportamiento anterior: gana la remota.
+  // Los ids que solo están de un lado se conservan tal cual.
+  var _conflictosUltimaFusion = 0;
   function fusionarPorId(locales, remotos){
     var mapa = {};
     locales.forEach(function(x){ mapa[x.id] = x; });
-    remotos.forEach(function(x){ mapa[x.id] = x; });
+    _conflictosUltimaFusion = 0;
+    remotos.forEach(function(rem){
+      var loc = mapa[rem.id];
+      if(!loc){ mapa[rem.id] = rem; return; }
+      var tl = loc.updatedAt, tr = rem.updatedAt;
+      if(tl && tr && tl !== tr){
+        _conflictosUltimaFusion++;
+        mapa[rem.id] = (tl > tr) ? loc : rem;   // ISO-8601: comparación de string = cronológica
+      } else {
+        mapa[rem.id] = rem;                      // sin sellos fiables -> gana la remota (como antes)
+      }
+    });
+    if(_conflictosUltimaFusion) console.info('[sync] ' + _conflictosUltimaFusion + ' fila(s) en conflicto resueltas por fecha de edición');
     return Object.keys(mapa).map(function(id){ return mapa[id]; });
   }
 
@@ -3077,6 +3129,14 @@
     supaConectando = true;
 
     try{
+      // ¿la BD ya tiene la columna updated_at (ver supabase_schema.sql)? Si NO, hay
+      // que quitarla de los payloads o PostgREST rechaza el upsert entero (PGRST204).
+      // Así el mismo código funciona antes y después de correr la migración.
+      try{
+        var probe = await supa.from('pedidos').select('updated_at').limit(1);
+        soportaUpdatedAt = !probe.error;
+      }catch(_){ soportaUpdatedAt = false; }
+
       var resPedidos = await supa.from('pedidos').select('*');
       if(resPedidos.error) throw resPedidos.error;
       var resGastos = await supa.from('gastos').select('*');

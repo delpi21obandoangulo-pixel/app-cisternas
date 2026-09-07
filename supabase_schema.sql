@@ -111,6 +111,12 @@ create index if not exists pedidos_empresa_idx on public.pedidos (empresa_id);
 alter table public.pedidos add column if not exists volumen_m3 numeric(6,2);
 alter table public.pedidos add column if not exists metodo_pago text;
 
+-- updated_at por fila: lo usa el cliente (app.js pedidoARemoto / fusionarPorId) para
+-- resolver conflictos entre dispositivos por "última edición gana" en vez de "la
+-- remota siempre gana". El cliente SIEMPRE manda este valor; el default cubre filas
+-- creadas por otra vía. El trigger lo refresca en cada UPDATE que no lo traiga.
+alter table public.pedidos add column if not exists updated_at timestamptz not null default now();
+
 -- ---- CHECK constraints (idempotentes vía bloque catch) -------------------
 do $$
 begin
@@ -172,6 +178,27 @@ comment on table public.gastos is 'Gastos operativos (combustible, mantenimiento
 create index if not exists gastos_fecha_idx on public.gastos (fecha);
 alter table public.gastos add column if not exists empresa_id text not null default 'kunturmasha';
 update public.gastos set empresa_id = 'kunturmasha' where empresa_id is null;
+alter table public.gastos add column if not exists updated_at timestamptz not null default now();
+
+-- Trigger compartido: si un UPDATE llega SIN updated_at (o con uno más viejo que el
+-- que ya está), lo pone en now(). Así una escritura directa por la API REST tampoco
+-- puede "retroceder" el reloj de una fila.
+create or replace function public.tocar_updated_at()
+returns trigger language plpgsql as $$
+begin
+  if new.updated_at is null or new.updated_at < old.updated_at then
+    new.updated_at := now();
+  end if;
+  return new;
+end $$;
+
+drop trigger if exists trg_pedidos_updated_at on public.pedidos;
+create trigger trg_pedidos_updated_at before update on public.pedidos
+  for each row execute function public.tocar_updated_at();
+
+drop trigger if exists trg_gastos_updated_at on public.gastos;
+create trigger trg_gastos_updated_at before update on public.gastos
+  for each row execute function public.tocar_updated_at();
 
 do $$
 begin
