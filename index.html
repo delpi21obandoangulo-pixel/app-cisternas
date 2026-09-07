@@ -1567,9 +1567,12 @@
   script-src 'self' a secas (ver <meta> arriba y vercel.json).
 -->
 <script defer src="/vendor/supabase-js.js"></script>
-<script defer src="/app.js"></script>
-<script defer src="/ui-fx.js"></script>
-<script defer src="/pwa.js"></script>
+<!-- Versiones MINIFICADAS para producción (esbuild). El código fuente legible es
+     app.js / ui-fx.js / pwa.js; tras editarlos hay que correr `node scripts/minify.mjs`
+     antes de desplegar. -->
+<script defer src="/app.min.js"></script>
+<script defer src="/ui-fx.min.js"></script>
+<script defer src="/pwa.min.js"></script>
 
 </body>
 </html>

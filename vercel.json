@@ -20,7 +20,7 @@
       ]
     },
     {
-      "source": "/app.js",
+      "source": "/app.min.js",
       "headers": [
         { "key": "Content-Type", "value": "text/javascript; charset=utf-8" },
         { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }

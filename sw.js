@@ -12,7 +12,7 @@
    ============================================================================ */
 'use strict';
 
-var CACHE_VERSION = 'wcs-v6';
+var CACHE_VERSION = 'wcs-v7';
 var CACHE_NAME = 'watercore-' + CACHE_VERSION;
 var OFFLINE_URL = '/offline.html';
 var RUNTIME_MAX = 60;   // tope LRU del caché de estáticos de runtime
@@ -20,15 +20,15 @@ var RUNTIME_MAX = 60;   // tope LRU del caché de estáticos de runtime
 // Código de la app: SIEMPRE red primero (así un deploy nuevo se ve al instante
 // estando online) y el caché solo es el respaldo sin conexión. No hace falta
 // subir CACHE_VERSION en cada deploy por estos.
-var NETWORK_FIRST = /\/(index\.html|app\.js|ui-fx\.js|ui-fx\.css|pwa\.js)$/;
+var NETWORK_FIRST = /\/(index\.html|app(\.min)?\.js|ui-fx(\.min)?\.js|ui-fx\.css|pwa(\.min)?\.js)$/;
 
 var PRECACHE = [
   '/',
   '/index.html',
-  '/app.js',
+  '/app.min.js',
   '/ui-fx.css',
-  '/ui-fx.js',
-  '/pwa.js',
+  '/ui-fx.min.js',
+  '/pwa.min.js',
   '/manifest.webmanifest',
   '/offline.html',
   '/icon.svg',
