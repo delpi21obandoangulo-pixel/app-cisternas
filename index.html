@@ -8,10 +8,11 @@
      otro hosting, una vista previa): sigue bloqueando scripts inline y hosts no listados,
      que es la mitigación clave del XSS almacenado. script-src NO lleva 'unsafe-inline':
      toda la lógica vive en app.js (externo) y no hay ni un solo on*="" en el HTML. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.tile.openstreetmap.org; font-src 'self'; connect-src 'self' https://mwvyhjvafwimcdxfyutf.supabase.co wss://mwvyhjvafwimcdxfyutf.supabase.co https://nominatim.openstreetmap.org; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://panel-webs-six.vercel.app; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.tile.openstreetmap.org; font-src 'self'; connect-src 'self' https://panel-webs-six.vercel.app https://mwvyhjvafwimcdxfyutf.supabase.co wss://mwvyhjvafwimcdxfyutf.supabase.co https://nominatim.openstreetmap.org; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'self'">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>WaterCore Space</title>
+<meta name="description" content="Pide y cotiza agua en cisterna en Trujillo: cotizador de fletes por zona y volumen, agenda de despachos y hub de empresas asociadas. Instalable como app.">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#dceffb">
 <!-- PWA: instalable y usable sin conexión (ver sw.js / pwa.js). Progresivo. -->

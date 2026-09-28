@@ -44,9 +44,13 @@
     }).catch(function(){ /* sin SW: la app sigue igual */ });
 
     // Cuando el SW nuevo toma el control, recarga una vez para servir todo coherente.
+    // Solo si ya había uno controlando (una ACTUALIZACIÓN): en la primera visita el
+    // SW toma el control por clients.claim() y recargar ahí costaba una segunda
+    // carga completa de la página a cada visitante nuevo (2026-09-28).
+    var teniaControl = !!navigator.serviceWorker.controller;
     var reloaded = false;
     navigator.serviceWorker.addEventListener('controllerchange', function(){
-      if (reloaded) return;
+      if (reloaded || !teniaControl) return;
       reloaded = true;
       window.location.reload();
     });

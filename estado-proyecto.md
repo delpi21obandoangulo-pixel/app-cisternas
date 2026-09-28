@@ -171,3 +171,6 @@ en dispositivo real, 0.10 `assetlinks.json` (solo si se hace TWA).
 5. Confirmar rama de producción (`master` vs `demo`) y desplegar a Vercel
    (`index.html` + `app.js` + `ui-fx.*` + `vendor/` + `vercel.json`).
 6. (Opcional) Borrar del repo `kunturmasha-web.zip` y `kunturmasha_app.html` (cruft).
+
+## Bitácora de sesiones
+- **2026-09-28** — Rendimiento (excepción de aislamiento 1.7 autorizada con doble PIN desde la sesión del Panel de Webs; solo front-end, 0 filas de BD, sin tocar pedidos ni contabilidad). Lighthouse móvil: rendimiento 57, buenas prácticas 93, SEO 90. Hallazgos y cambios: (1) **cada visitante nuevo cargaba la página dos veces**: `pwa.js` recargaba en `controllerchange` también en la primera visita (cuando el SW toma el control por `clients.claim()`); ahora solo recarga si ya había un SW controlando (actualización). `sw.js` solo sube `CACHE_VERSION` wcs-v7→v8. (2) **el contador del Panel de Webs no funcionaba**: la CSP en `<meta>` de `index.html` no incluía `https://panel-webs-six.vercel.app` (la de `vercel.json` sí) y el navegador aplica ambas → añadido a `script-src` y `connect-src`. (3) meta descripción. Minificado con `node scripts/minify.mjs`. Probado en local: una sola carga de documento, SW activo, cotizador OK, sin errores.

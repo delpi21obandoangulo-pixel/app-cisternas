@@ -12,7 +12,7 @@
    ============================================================================ */
 'use strict';
 
-var CACHE_VERSION = 'wcs-v7';
+var CACHE_VERSION = 'wcs-v8';
 var CACHE_NAME = 'watercore-' + CACHE_VERSION;
 var OFFLINE_URL = '/offline.html';
 var RUNTIME_MAX = 60;   // tope LRU del caché de estáticos de runtime
